@@ -16,8 +16,6 @@ class AuthService {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final CollectionReference<Map<String, dynamic>> _users =
       FirebaseFirestore.instance.collection('users');
-  final CollectionReference<Map<String, dynamic>> _displayNames =
-      FirebaseFirestore.instance.collection('displayNames');
 
   String _normalizeEmail(String value) => value.trim().toLowerCase();
 
@@ -53,6 +51,12 @@ class AuthService {
 
   String _normalizeDisplayName(String value) => value.trim().toLowerCase();
 
+  String _displayNameLockId(String value) =>
+      '__display_name_lock__${_normalizeDisplayName(value)}';
+
+  DocumentReference<Map<String, dynamic>> _displayNameLockRef(String value) =>
+      _users.doc(_displayNameLockId(value));
+
   Future<bool> isDisplayNameAvailable(String value) async {
     final displayName = value.trim();
     if (displayName.isEmpty) {
@@ -60,19 +64,11 @@ class AuthService {
     }
 
     final normalized = _normalizeDisplayName(displayName);
-    final byDisplayName = await _displayNames
+    final matchingDocs = await _users
         .where('displayNameLower', isEqualTo: normalized)
         .limit(1)
         .get();
-    if (byDisplayName.docs.isNotEmpty) {
-      return false;
-    }
-
-    final byLowercaseUserField = await _users
-        .where('displayNameLower', isEqualTo: normalized)
-        .limit(1)
-        .get();
-    if (byLowercaseUserField.docs.isNotEmpty) {
+    if (matchingDocs.docs.isNotEmpty) {
       return false;
     }
 
@@ -81,49 +77,6 @@ class AuthService {
         .limit(1)
         .get();
     return byLegacyNickname.docs.isEmpty;
-  }
-
-  Future<void> claimDisplayName({
-    required String displayName,
-    required String uid,
-    required String email,
-  }) async {
-    final trimmed = displayName.trim();
-    if (trimmed.isEmpty) {
-      throw FirebaseAuthException(
-        code: 'invalid-display-name',
-        message: '닉네임을 입력해주세요.',
-      );
-    }
-
-    final normalized = _normalizeDisplayName(trimmed);
-    final claimRef = _displayNames.doc(normalized);
-
-    await FirebaseFirestore.instance.runTransaction((transaction) async {
-      final snapshot = await transaction.get(claimRef);
-      if (snapshot.exists) {
-        throw FirebaseAuthException(
-          code: 'nickname-taken',
-          message: '이미 사용 중인 닉네임이에요.',
-        );
-      }
-
-      transaction.set(claimRef, {
-        'displayName': trimmed,
-        'displayNameLower': normalized,
-        'uid': uid,
-        'email': email,
-        'claimedAt': FieldValue.serverTimestamp(),
-      });
-    });
-  }
-
-  Future<void> releaseDisplayName(String value) async {
-    final normalized = _normalizeDisplayName(value);
-    if (normalized.isEmpty) {
-      return;
-    }
-    await _displayNames.doc(normalized).delete();
   }
 
   String? validatePassword(String? value) {
@@ -189,28 +142,40 @@ class AuthService {
     }
 
     try {
-      await claimDisplayName(
-        displayName: trimmedDisplayName,
-        uid: user.uid,
-        email: normalizedEmail,
-      );
-      await _users.doc(user.uid).set({
-        'uid': user.uid,
-        'email': normalizedEmail,
-        'displayName': trimmedDisplayName,
-        'displayNameLower': _normalizeDisplayName(trimmedDisplayName),
-        'preferredLocation': sanitizePreferredLocation(preferredLocation),
-        'emailVerified': false,
-        'registrationStatus': 'pending',
-        'createdAt': FieldValue.serverTimestamp(),
-        'updatedAt': FieldValue.serverTimestamp(),
-      }, SetOptions(merge: true));
+      await FirebaseFirestore.instance.runTransaction((transaction) async {
+        final lockRef = _displayNameLockRef(trimmedDisplayName);
+        final lockSnapshot = await transaction.get(lockRef);
+        if (lockSnapshot.exists) {
+          throw FirebaseAuthException(
+            code: 'nickname-taken',
+            message: '이미 사용 중인 닉네임이에요.',
+          );
+        }
+
+        transaction.set(lockRef, {
+          'kind': 'display_name_lock',
+          'displayName': trimmedDisplayName,
+          'displayNameLower': _normalizeDisplayName(trimmedDisplayName),
+          'uid': user.uid,
+          'email': normalizedEmail,
+          'claimedAt': FieldValue.serverTimestamp(),
+        });
+
+        transaction.set(_users.doc(user.uid), {
+          'uid': user.uid,
+          'email': normalizedEmail,
+          'displayName': trimmedDisplayName,
+          'displayNameLower': _normalizeDisplayName(trimmedDisplayName),
+          'preferredLocation': sanitizePreferredLocation(preferredLocation),
+          'emailVerified': false,
+          'registrationStatus': 'pending',
+          'createdAt': FieldValue.serverTimestamp(),
+          'updatedAt': FieldValue.serverTimestamp(),
+        }, SetOptions(merge: true));
+      });
     } catch (_) {
       try {
         await user.delete();
-      } catch (_) {}
-      try {
-        await releaseDisplayName(trimmedDisplayName);
       } catch (_) {}
       rethrow;
     }
