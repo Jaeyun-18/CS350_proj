@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'firebase_options.dart';
 
@@ -78,6 +79,15 @@ class GroupCreateState extends State<GroupCreatePage> {
 
   Future<void> saveData() async {
     try {
+      final user = FirebaseAuth.instance.currentUser;
+      if (user == null) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('로그인된 사용자가 없습니다. 다시 로그인해주세요.')),
+        );
+        return;
+      }
+
       final text = _textController.text.trim();
       final location = _selectedLocation;
       final date = _selectedDate;
@@ -120,6 +130,8 @@ class GroupCreateState extends State<GroupCreatePage> {
         'location': location,
         'date_time': Timestamp.fromDate(shoppingDateTime),
         'max_num': _maxMembers,
+        'user_id': user.uid,
+        'now_num' : 1,
       });
       _textController.clear();
       setState(() {
@@ -243,11 +255,29 @@ class GroupCreateState extends State<GroupCreatePage> {
         ),
       ),
       floatingActionButton: SizedBox(
-        width: 160,
+        width: 360,
         height: 64,
-        child: FloatingActionButton(
-          onPressed: saveData,
-          child: const Text('Create Group'),
+        child: Row(
+          children: [
+            Expanded(
+              child: FloatingActionButton.extended(
+                onPressed: () {
+                  Navigator.of(context).pop();
+                },
+                icon: const Icon(Icons.close),
+                label: const Text('Cancel'),
+                backgroundColor: Colors.grey,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: FloatingActionButton.extended(
+                onPressed: saveData,
+                icon: const Icon(Icons.check),
+                label: const Text('Create Group'),
+              ),
+            ),
+          ],
         ),
       ),
     );

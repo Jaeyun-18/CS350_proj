@@ -227,12 +227,25 @@ class _MainPageState extends State<MainPage> {
                                 );
                               }
 
+                              final ownerDocs = docs
+                                  .where((doc) =>
+                                      doc.data()['user_id']?.toString() ==
+                                      widget.user.uid)
+                                  .toList();
+                              final otherDocs = docs
+                                  .where((doc) =>
+                                      doc.data()['user_id']?.toString() !=
+                                      widget.user.uid)
+                                  .toList();
+                              final sortedDocs = [...ownerDocs, ...otherDocs];
+
                               return ListView.separated(
-                                itemCount: docs.length,
+                                itemCount: sortedDocs.length,
                                 separatorBuilder: (_, _) =>
                                     const SizedBox(height: 8),
                                 itemBuilder: (context, index) {
-                                  final data = docs[index].data();
+                                  final data = sortedDocs[index].data();
+                                  final userId = data['user_id']?.toString() ?? '';
                                   final name =
                                       data['name']?.toString() ?? '(no name)';
                                   final location = data['location']?.toString() ??
@@ -241,15 +254,27 @@ class _MainPageState extends State<MainPage> {
                                       data['max_num']?.toString() ?? '(no max)';
                                   final Timestamp? date =
                                       data['date_time'] as Timestamp?;
-                                  final dateText = date == null
+                                  final dateText = date == null 
                                       ? '(no date)'
                                       : _formatDateTime(date.toDate());
+                                  final nowNum = data['now_num']?.toString() ?? '(no now)';
+                                  final isOwner = userId == widget.user.uid;
 
                                   return Card(
                                     child: ListTile(
                                       title: Text(name),
                                       subtitle: Text(
-                                        '$location\n$maxNum\n$dateText',
+                                        '$location\n- $dateText\n $nowNum / $maxNum MEMBERS',
+                                      ),
+                                      trailing: TextButton(
+                                        onPressed: () {
+                                          ScaffoldMessenger.of(context).showSnackBar(
+                                            SnackBar(
+                                              content: Text(isOwner ? 'Edit 버튼을 눌렀습니다.' : 'JOIN 버튼을 눌렀습니다.'),
+                                            ),
+                                          );
+                                        },
+                                        child: Text(isOwner ? 'Edit' : 'JOIN'),
                                       ),
                                     ),
                                   );
