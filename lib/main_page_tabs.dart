@@ -260,7 +260,7 @@ class _HomeTab extends StatelessWidget {
               formatDateTime: _formatDateTime,
               actionLabel: 'JOIN',
               actionIcon: Icons.how_to_reg_rounded,
-              badgeLabel: 'ENDING SOON',
+              badgeLabel: featuredGroup.location,
               onAction: () => onJoinGroup(featuredGroup.docRef),
             ),
             const SizedBox(height: 12),
