@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'auth_service.dart';
+import 'auth_visuals.dart';
 
 class SignupPage extends StatefulWidget {
   const SignupPage({super.key, required this.onBackToLogin});
@@ -53,11 +54,13 @@ class _SignupPageState extends State<SignupPage> {
   }
 
   Future<void> _checkNicknameAvailability() async {
-    final validation = AuthService.instance.validateNickname(_nicknameController.text);
+    final validation = AuthService.instance.validateNickname(
+      _nicknameController.text,
+    );
     if (validation != null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(validation)),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(validation)));
       return;
     }
 
@@ -66,8 +69,9 @@ class _SignupPageState extends State<SignupPage> {
     });
 
     try {
-      final available = await AuthService.instance
-          .isDisplayNameAvailable(_nicknameController.text);
+      final available = await AuthService.instance.isDisplayNameAvailable(
+        _nicknameController.text,
+      );
       if (!mounted) {
         return;
       }
@@ -84,9 +88,9 @@ class _SignupPageState extends State<SignupPage> {
       if (!mounted) {
         return;
       }
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(friendlyAuthMessage(error))),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(friendlyAuthMessage(error))));
     } finally {
       if (mounted) {
         setState(() {
@@ -105,9 +109,9 @@ class _SignupPageState extends State<SignupPage> {
     if (!_nicknameChecked ||
         !_nicknameAvailable ||
         _checkedNickname != currentNickname) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('닉네임 중복확인을 먼저 완료해주세요.')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('닉네임 중복확인을 먼저 완료해주세요.')));
       return;
     }
 
@@ -120,16 +124,17 @@ class _SignupPageState extends State<SignupPage> {
         email: _emailController.text,
         displayName: currentNickname,
         password: _passwordController.text,
-        preferredLocation:
-            AuthService.instance.sanitizePreferredLocation(_preferredLocation),
+        preferredLocation: AuthService.instance.sanitizePreferredLocation(
+          _preferredLocation,
+        ),
       );
     } catch (error) {
       if (!mounted) {
         return;
       }
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(friendlyAuthMessage(error))),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(friendlyAuthMessage(error))));
     } finally {
       if (mounted) {
         setState(() {
@@ -149,199 +154,286 @@ class _SignupPageState extends State<SignupPage> {
     super.dispose();
   }
 
+  InputDecoration _signupFieldDecoration({
+    required String labelText,
+    required String hintText,
+    required IconData icon,
+    Widget? suffixIcon,
+    String? helperText,
+  }) {
+    return AuthVisuals.inputDecoration(
+      labelText: labelText,
+      hintText: hintText,
+      helperText: helperText,
+      prefixIcon: Icon(icon, color: AuthVisuals.muted, size: 20),
+      suffixIcon: suffixIcon,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [Color(0xFFF7FFF9), Color(0xFFE1F6E8)],
-          ),
-        ),
+        decoration: const BoxDecoration(gradient: AuthVisuals.pageGradient),
         child: SafeArea(
           child: Center(
             child: SingleChildScrollView(
-              padding: const EdgeInsets.all(24),
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
               child: ConstrainedBox(
                 constraints: const BoxConstraints(maxWidth: 480),
-                child: Card(
-                  elevation: 0,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(28),
-                  ),
-                  child: Padding(
-                    padding: const EdgeInsets.all(24),
-                    child: Form(
-                      key: _formKey,
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          Text(
-                            '회원가입',
-                            style: Theme.of(context).textTheme.headlineSmall,
+                child: Container(
+                  decoration: AuthVisuals.cardDecoration,
+                  padding: const EdgeInsets.all(24),
+                  child: Form(
+                    key: _formKey,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        _SignupHeader(onBack: widget.onBackToLogin),
+                        const SizedBox(height: 24),
+                        Text('회원가입', style: AuthVisuals.titleStyle(context)),
+                        const SizedBox(height: 8),
+                        Text(
+                          '가입은 @kaist.ac.kr 이메일 인증 링크를 눌러야 완료돼요.',
+                          style: AuthVisuals.subtitleStyle(context),
+                        ),
+                        const SizedBox(height: 24),
+                        Text(
+                          'KAIST EMAIL',
+                          style: AuthVisuals.sectionLabelStyle(context),
+                        ),
+                        const SizedBox(height: 8),
+                        TextFormField(
+                          controller: _emailController,
+                          keyboardType: TextInputType.emailAddress,
+                          textInputAction: TextInputAction.next,
+                          decoration: _signupFieldDecoration(
+                            labelText: '이메일',
+                            hintText: 'name@kaist.ac.kr',
+                            icon: Icons.mail_outline_rounded,
+                            helperText: '가입 후 인증 링크가 발송돼요.',
                           ),
-                          const SizedBox(height: 8),
-                          const Text(
-                            '가입은 @kaist.ac.kr 이메일 인증이 완료되어야 마무리돼요.',
+                          validator: AuthService.instance.validateEmail,
+                        ),
+                        const SizedBox(height: 18),
+                        Text(
+                          'NICKNAME',
+                          style: AuthVisuals.sectionLabelStyle(context),
+                        ),
+                        const SizedBox(height: 8),
+                        TextFormField(
+                          controller: _nicknameController,
+                          textInputAction: TextInputAction.next,
+                          decoration: _signupFieldDecoration(
+                            labelText: '닉네임',
+                            hintText: '사용할 닉네임을 입력하세요',
+                            icon: Icons.person_outline_rounded,
                           ),
-                          const SizedBox(height: 24),
-                          TextFormField(
-                            controller: _emailController,
-                            keyboardType: TextInputType.emailAddress,
-                            decoration: const InputDecoration(
-                              labelText: '이메일',
-                              hintText: 'name@kaist.ac.kr',
-                              border: OutlineInputBorder(),
-                            ),
-                            validator: AuthService.instance.validateEmail,
-                          ),
-                          const SizedBox(height: 16),
-                          TextFormField(
-                            controller: _nicknameController,
-                            decoration: const InputDecoration(
-                              labelText: '닉네임',
-                              border: OutlineInputBorder(),
-                            ),
-                            validator: AuthService.instance.validateNickname,
-                          ),
-                          const SizedBox(height: 12),
-                          Row(
-                            children: [
-                              Expanded(
-                                child: Text(
-                                  _nicknameStatusMessage ??
-                                      '닉네임 중복확인을 진행해주세요.',
-                                  style: Theme.of(context)
-                                      .textTheme
-                                      .bodySmall
-                                      ?.copyWith(
-                                        color: _nicknameStatusMessage == null
-                                            ? Colors.grey
-                                            : _nicknameAvailable
-                                                ? Colors.green
-                                                : Colors.red,
-                                      ),
-                                ),
-                              ),
-                              const SizedBox(width: 12),
-                              SizedBox(
-                                height: 48,
-                                child: OutlinedButton(
-                                  onPressed: _isCheckingNickname
-                                      ? null
-                                      : _checkNicknameAvailability,
-                                  child: _isCheckingNickname
-                                      ? const SizedBox(
-                                          width: 18,
-                                          height: 18,
-                                          child: CircularProgressIndicator(
-                                            strokeWidth: 2,
-                                          ),
-                                        )
-                                      : const Text('중복확인'),
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 16),
-                          TextFormField(
-                            controller: _passwordController,
-                            obscureText: _obscurePassword,
-                            decoration: InputDecoration(
-                              labelText: '비밀번호',
-                              border: const OutlineInputBorder(),
-                              suffixIcon: IconButton(
-                                onPressed: () {
-                                  setState(() {
-                                    _obscurePassword = !_obscurePassword;
-                                  });
-                                },
-                                icon: Icon(
-                                  _obscurePassword
-                                      ? Icons.visibility_outlined
-                                      : Icons.visibility_off_outlined,
-                                ),
-                              ),
-                            ),
-                            validator: AuthService.instance.validatePassword,
-                          ),
-                          const SizedBox(height: 16),
-                          TextFormField(
-                            controller: _confirmPasswordController,
-                            obscureText: _obscureConfirmPassword,
-                            decoration: InputDecoration(
-                              labelText: '비밀번호 확인',
-                              border: const OutlineInputBorder(),
-                              suffixIcon: IconButton(
-                                onPressed: () {
-                                  setState(() {
-                                    _obscureConfirmPassword =
-                                        !_obscureConfirmPassword;
-                                  });
-                                },
-                                icon: Icon(
-                                  _obscureConfirmPassword
-                                      ? Icons.visibility_outlined
-                                      : Icons.visibility_off_outlined,
-                                ),
-                              ),
-                            ),
-                            validator: (value) =>
-                                AuthService.instance.validatePasswordConfirmation(
-                              value,
-                              _passwordController.text,
-                            ),
-                          ),
-                          const SizedBox(height: 16),
-                          DropdownButtonFormField<String>(
-                            initialValue: _preferredLocation,
-                            decoration: const InputDecoration(
-                              labelText: '선호 위치 (선택)',
-                              border: OutlineInputBorder(),
-                            ),
-                            items: AuthService.preferredLocations
-                                .map(
-                                  (location) => DropdownMenuItem<String>(
-                                    value: location,
-                                    child: Text(location),
+                          validator: AuthService.instance.validateNickname,
+                        ),
+                        const SizedBox(height: 10),
+                        LayoutBuilder(
+                          builder: (context, constraints) {
+                            final isCompact = constraints.maxWidth < 380;
+                            final message = Text(
+                              _nicknameStatusMessage ?? '닉네임 중복확인을 진행해주세요.',
+                              style: Theme.of(context).textTheme.bodySmall
+                                  ?.copyWith(
+                                    color: _nicknameStatusMessage == null
+                                        ? AuthVisuals.muted
+                                        : _nicknameAvailable
+                                        ? AuthVisuals.success
+                                        : Colors.redAccent,
+                                    height: 1.35,
                                   ),
-                                )
-                                .toList(),
-                            onChanged: (value) {
-                              if (value == null) {
-                                return;
-                              }
-                              setState(() {
-                                _preferredLocation = value;
-                              });
-                            },
+                            );
+                            final button = SizedBox(
+                              height: 48,
+                              width: isCompact ? double.infinity : null,
+                              child: OutlinedButton(
+                                onPressed: _isCheckingNickname
+                                    ? null
+                                    : _checkNicknameAvailability,
+                                style: OutlinedButton.styleFrom(
+                                  side: const BorderSide(
+                                    color: AuthVisuals.cardBorder,
+                                    width: 1.4,
+                                  ),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(14),
+                                  ),
+                                  foregroundColor: AuthVisuals.text,
+                                  backgroundColor: Colors.white,
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 18,
+                                  ),
+                                ),
+                                child: _isCheckingNickname
+                                    ? const SizedBox(
+                                        width: 18,
+                                        height: 18,
+                                        child: CircularProgressIndicator(
+                                          strokeWidth: 2,
+                                          valueColor:
+                                              AlwaysStoppedAnimation<Color>(
+                                                AuthVisuals.success,
+                                              ),
+                                        ),
+                                      )
+                                    : const Text(
+                                        '중복확인',
+                                        style: TextStyle(
+                                          fontWeight: FontWeight.w700,
+                                        ),
+                                      ),
+                              ),
+                            );
+
+                            if (isCompact) {
+                              return Column(
+                                crossAxisAlignment: CrossAxisAlignment.stretch,
+                                children: [
+                                  message,
+                                  const SizedBox(height: 10),
+                                  button,
+                                ],
+                              );
+                            }
+
+                            return Row(
+                              children: [
+                                Expanded(child: message),
+                                const SizedBox(width: 12),
+                                button,
+                              ],
+                            );
+                          },
+                        ),
+                        const SizedBox(height: 18),
+                        Text(
+                          'PASSWORD',
+                          style: AuthVisuals.sectionLabelStyle(context),
+                        ),
+                        const SizedBox(height: 8),
+                        TextFormField(
+                          controller: _passwordController,
+                          obscureText: _obscurePassword,
+                          textInputAction: TextInputAction.next,
+                          decoration: _signupFieldDecoration(
+                            labelText: '비밀번호',
+                            hintText: '8자 이상 입력하세요',
+                            icon: Icons.lock_outline_rounded,
+                            suffixIcon: IconButton(
+                              onPressed: () {
+                                setState(() {
+                                  _obscurePassword = !_obscurePassword;
+                                });
+                              },
+                              icon: Icon(
+                                _obscurePassword
+                                    ? Icons.visibility_outlined
+                                    : Icons.visibility_off_outlined,
+                                color: AuthVisuals.muted,
+                              ),
+                            ),
                           ),
-                          const SizedBox(height: 12),
-                          const Text(
-                            '선호 위치는 지금 선택하지 않아도 되고, 가입 후 마이페이지에서 바꿀 수 있어요.',
+                          validator: AuthService.instance.validatePassword,
+                        ),
+                        const SizedBox(height: 18),
+                        Text(
+                          'CONFIRM PASSWORD',
+                          style: AuthVisuals.sectionLabelStyle(context),
+                        ),
+                        const SizedBox(height: 8),
+                        TextFormField(
+                          controller: _confirmPasswordController,
+                          obscureText: _obscureConfirmPassword,
+                          textInputAction: TextInputAction.next,
+                          decoration: _signupFieldDecoration(
+                            labelText: '비밀번호 확인',
+                            hintText: '비밀번호를 다시 입력하세요',
+                            icon: Icons.lock_outline_rounded,
+                            suffixIcon: IconButton(
+                              onPressed: () {
+                                setState(() {
+                                  _obscureConfirmPassword =
+                                      !_obscureConfirmPassword;
+                                });
+                              },
+                              icon: Icon(
+                                _obscureConfirmPassword
+                                    ? Icons.visibility_outlined
+                                    : Icons.visibility_off_outlined,
+                                color: AuthVisuals.muted,
+                              ),
+                            ),
                           ),
-                          const SizedBox(height: 24),
-                          FilledButton(
-                            onPressed: _isLoading ? null : _handleSignup,
-                            child: _isLoading
-                                ? const SizedBox(
-                                    width: 20,
-                                    height: 20,
-                                    child: CircularProgressIndicator(
-                                      strokeWidth: 2,
-                                    ),
-                                  )
-                                : const Text('이메일 인증 후 가입'),
+                          validator: (value) =>
+                              AuthService.instance.validatePasswordConfirmation(
+                                value,
+                                _passwordController.text,
+                              ),
+                        ),
+                        const SizedBox(height: 18),
+                        Text(
+                          'MY LOCATION',
+                          style: AuthVisuals.sectionLabelStyle(context),
+                        ),
+                        const SizedBox(height: 8),
+                        DropdownButtonFormField<String>(
+                          initialValue: _preferredLocation,
+                          decoration: _signupFieldDecoration(
+                            labelText: '선호 위치 (선택)',
+                            hintText: '나중에 선택해도 돼요',
+                            icon: Icons.location_on_outlined,
                           ),
-                          const SizedBox(height: 12),
-                          TextButton(
+                          items: AuthService.preferredLocations
+                              .map(
+                                (location) => DropdownMenuItem<String>(
+                                  value: location,
+                                  child: Text(location),
+                                ),
+                              )
+                              .toList(),
+                          onChanged: (value) {
+                            if (value == null) {
+                              return;
+                            }
+                            setState(() {
+                              _preferredLocation = value;
+                            });
+                          },
+                        ),
+                        const SizedBox(height: 10),
+                        Text(
+                          '선호 위치는 나중에 마이페이지에서 바꿀 수 있어요.',
+                          style: Theme.of(context).textTheme.bodySmall
+                              ?.copyWith(
+                                color: AuthVisuals.muted,
+                                height: 1.35,
+                              ),
+                        ),
+                        const SizedBox(height: 24),
+                        AuthGradientButton(
+                          label: '이메일 인증 후 가입',
+                          onPressed: _isLoading ? null : _handleSignup,
+                          isLoading: _isLoading,
+                        ),
+                        const SizedBox(height: 18),
+                        Align(
+                          alignment: Alignment.center,
+                          child: TextButton(
                             onPressed: widget.onBackToLogin,
-                            child: const Text('로그인으로 돌아가기'),
+                            style: TextButton.styleFrom(
+                              foregroundColor: AuthVisuals.success,
+                            ),
+                            child: const Text(
+                              '로그인으로 돌아가기',
+                              style: TextStyle(fontWeight: FontWeight.w800),
+                            ),
                           ),
-                        ],
-                      ),
+                        ),
+                      ],
                     ),
                   ),
                 ),
@@ -350,6 +442,63 @@ class _SignupPageState extends State<SignupPage> {
           ),
         ),
       ),
+    );
+  }
+}
+
+class _SignupHeader extends StatelessWidget {
+  const _SignupHeader({required this.onBack});
+
+  final VoidCallback onBack;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        InkWell(
+          onTap: onBack,
+          borderRadius: BorderRadius.circular(16),
+          child: Container(
+            width: 40,
+            height: 40,
+            decoration: BoxDecoration(
+              color: AuthVisuals.accentLight,
+              borderRadius: BorderRadius.circular(14),
+            ),
+            child: const Icon(
+              Icons.arrow_back_rounded,
+              color: AuthVisuals.success,
+              size: 20,
+            ),
+          ),
+        ),
+        const SizedBox(width: 14),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Create Account',
+                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                  color: AuthVisuals.text,
+                  fontWeight: FontWeight.w900,
+                  letterSpacing: -0.7,
+                  fontSize: 26,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                'Join WeBuyDivvy with your KAIST email',
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color: AuthVisuals.label,
+                  height: 1.35,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
     );
   }
 }
