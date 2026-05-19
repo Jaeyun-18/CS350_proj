@@ -135,8 +135,66 @@ class _MainPageState extends State<MainPage> {
     );
   }
 
+  /// 동일 품목 카테고리 그룹에 이미 참여 중이면 그 카테고리명을, 없으면 null을
+  /// 반환한다(명세 5.4.2 — 동일 품목 카테고리 중복 참여 제한).
+  Future<String?> _findCategoryConflict(
+    DocumentReference<Map<String, dynamic>> ref,
+  ) async {
+    final targetSnapshot = await ref.get();
+    final targetData = targetSnapshot.data();
+    if (targetData == null) {
+      return null;
+    }
+    final targetCategories = categoriesOf(
+      _GroupEntry.fromData(
+        id: ref.id,
+        data: targetData,
+        currentUserId: widget.user.uid,
+      ).items,
+    );
+    if (targetCategories.isEmpty) {
+      return null;
+    }
+
+    final myGroups = await FirebaseFirestore.instance
+        .collection('group')
+        .where('member_ids', arrayContains: widget.user.uid)
+        .get();
+    for (final doc in myGroups.docs) {
+      if (doc.id == ref.id) {
+        continue;
+      }
+      final other = _GroupEntry.fromData(
+        id: doc.id,
+        data: doc.data(),
+        currentUserId: widget.user.uid,
+      );
+      if (other.isEnded) {
+        continue;
+      }
+      final overlap = targetCategories.intersection(categoriesOf(other.items));
+      if (overlap.isNotEmpty) {
+        return overlap.first;
+      }
+    }
+    return null;
+  }
+
   Future<bool> _joinGroup(DocumentReference<Map<String, dynamic>> ref) async {
     try {
+      final conflictCategory = await _findCategoryConflict(ref);
+      if (conflictCategory != null) {
+        if (!mounted) {
+          return false;
+        }
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('이미 "$conflictCategory" 품목 그룹에 참여 중이라 참여할 수 없어요.'),
+          ),
+        );
+        return false;
+      }
+
       await FirebaseFirestore.instance.runTransaction((transaction) async {
         final snapshot = await transaction.get(ref);
         if (!snapshot.exists) {
