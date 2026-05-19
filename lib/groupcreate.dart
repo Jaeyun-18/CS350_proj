@@ -145,6 +145,8 @@ class GroupCreateState extends State<GroupCreatePage> {
         'user_id': user.uid,
         'now_num': 1,
         'member_ids': [user.uid],
+        'status': 'active',
+        'recruitment_status': 'open',
       });
       _textController.clear();
       setState(() {

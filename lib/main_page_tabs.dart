@@ -10,6 +10,7 @@ class _HomeTab extends StatelessWidget {
     required this.onCreateGroup,
     required this.onEditPreferredLocation,
     required this.onFilterPressed,
+    required this.onOpenGroup,
     required this.onJoinGroup,
   });
 
@@ -21,7 +22,8 @@ class _HomeTab extends StatelessWidget {
   final VoidCallback onCreateGroup;
   final Future<void> Function(String? currentValue) onEditPreferredLocation;
   final VoidCallback onFilterPressed;
-  final Future<void> Function(DocumentReference<Map<String, dynamic>> ref)
+  final ValueChanged<_GroupEntry> onOpenGroup;
+  final Future<bool> Function(DocumentReference<Map<String, dynamic>> ref)
   onJoinGroup;
 
   String _formatDateTime(DateTime value) {
@@ -261,7 +263,10 @@ class _HomeTab extends StatelessWidget {
               actionLabel: 'JOIN',
               actionIcon: Icons.how_to_reg_rounded,
               badgeLabel: featuredGroup.location,
-              onAction: () => onJoinGroup(featuredGroup.docRef),
+              onTap: () => onOpenGroup(featuredGroup),
+              onAction: () {
+                unawaited(onJoinGroup(featuredGroup.docRef));
+              },
             ),
             const SizedBox(height: 12),
             for (final group in remainingGroups) ...[
@@ -270,7 +275,10 @@ class _HomeTab extends StatelessWidget {
                 formatDateTime: _formatDateTime,
                 actionLabel: 'JOIN',
                 actionIcon: Icons.add_circle_outline_rounded,
-                onAction: () => onJoinGroup(group.docRef),
+                onTap: () => onOpenGroup(group),
+                onAction: () {
+                  unawaited(onJoinGroup(group.docRef));
+                },
               ),
               const SizedBox(height: 12),
             ],
@@ -308,6 +316,7 @@ class _FeaturedGroupCard extends StatelessWidget {
     required this.actionIcon,
     required this.badgeLabel,
     required this.onAction,
+    this.onTap,
   });
 
   final _GroupEntry group;
@@ -316,6 +325,7 @@ class _FeaturedGroupCard extends StatelessWidget {
   final IconData actionIcon;
   final String badgeLabel;
   final VoidCallback onAction;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
@@ -323,144 +333,155 @@ class _FeaturedGroupCard extends StatelessWidget {
         ? '(no date)'
         : formatDateTime(group.dateTime!);
 
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        gradient: _MainVisuals.featuredGradient,
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
         borderRadius: BorderRadius.circular(24),
-        boxShadow: const [
-          BoxShadow(
-            color: Color(0x220F172A),
-            blurRadius: 18,
-            offset: Offset(0, 10),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      badgeLabel,
-                      style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                        color: _MainVisuals.featuredGreen,
-                        fontWeight: FontWeight.w800,
-                        letterSpacing: 0.8,
-                      ),
-                    ),
-                    const SizedBox(height: 6),
-                    Text(
-                      group.title,
-                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                        color: Colors.white,
-                        fontWeight: FontWeight.w900,
-                      ),
-                    ),
-                    const SizedBox(height: 6),
-                    Row(
-                      children: [
-                        const Icon(
-                          Icons.calendar_today_outlined,
-                          color: _MainVisuals.featuredMuted,
-                          size: 14,
-                        ),
-                        const SizedBox(width: 6),
-                        Expanded(
-                          child: Text(
-                            dateText,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: Theme.of(context).textTheme.bodySmall
-                                ?.copyWith(color: _MainVisuals.featuredMuted),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(width: 12),
-              Container(
-                width: 48,
-                height: 48,
-                decoration: BoxDecoration(
-                  color: _MainVisuals.featuredBadge,
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                child: const Center(
-                  child: Text('🛒', style: TextStyle(fontSize: 22)),
-                ),
+        child: Container(
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            gradient: _MainVisuals.featuredGradient,
+            borderRadius: BorderRadius.circular(24),
+            boxShadow: const [
+              BoxShadow(
+                color: Color(0x220F172A),
+                blurRadius: 18,
+                offset: Offset(0, 10),
               ),
             ],
           ),
-          const SizedBox(height: 16),
-          Row(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Stack(
-                clipBehavior: Clip.none,
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  _StackAvatar(
-                    letter: 'S',
-                    background: const LinearGradient(
-                      colors: [_MainVisuals.green, Color(0xFF4ADE80)],
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          badgeLabel,
+                          style: Theme.of(context).textTheme.labelSmall
+                              ?.copyWith(
+                                color: _MainVisuals.featuredGreen,
+                                fontWeight: FontWeight.w800,
+                                letterSpacing: 0.8,
+                              ),
+                        ),
+                        const SizedBox(height: 6),
+                        Text(
+                          group.title,
+                          style: Theme.of(context).textTheme.titleLarge
+                              ?.copyWith(
+                                color: Colors.white,
+                                fontWeight: FontWeight.w900,
+                              ),
+                        ),
+                        const SizedBox(height: 6),
+                        Row(
+                          children: [
+                            const Icon(
+                              Icons.calendar_today_outlined,
+                              color: _MainVisuals.featuredMuted,
+                              size: 14,
+                            ),
+                            const SizedBox(width: 6),
+                            Expanded(
+                              child: Text(
+                                dateText,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: Theme.of(context).textTheme.bodySmall
+                                    ?.copyWith(
+                                      color: _MainVisuals.featuredMuted,
+                                    ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
                     ),
-                    textColor: Colors.white,
                   ),
-                  const Positioned(
-                    left: 18,
-                    child: _StackAvatar(
-                      letter: 'M',
-                      background: LinearGradient(
-                        colors: [Color(0xFFF97316), Color(0xFFFB923C)],
-                      ),
-                      textColor: Colors.white,
+                  const SizedBox(width: 12),
+                  Container(
+                    width: 48,
+                    height: 48,
+                    decoration: BoxDecoration(
+                      color: _MainVisuals.featuredBadge,
+                      borderRadius: BorderRadius.circular(16),
                     ),
-                  ),
-                  const Positioned(
-                    left: 36,
-                    child: _StackAvatar(
-                      letter: 'A',
-                      background: LinearGradient(
-                        colors: [Color(0xFF818CF8), Color(0xFFA78BFA)],
-                      ),
-                      textColor: Colors.white,
+                    child: const Center(
+                      child: Text('🛒', style: TextStyle(fontSize: 22)),
                     ),
                   ),
                 ],
               ),
-              const SizedBox(width: 84),
-              Text(
-                '${group.nowNum} / ${group.maxNum} members',
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: _MainVisuals.featuredMuted,
-                ),
-              ),
-              const Spacer(),
-              TextButton.icon(
-                onPressed: onAction,
-                icon: Icon(actionIcon, size: 16),
-                label: Text(actionLabel),
-                style: TextButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 10,
+              const SizedBox(height: 16),
+              Row(
+                children: [
+                  Stack(
+                    clipBehavior: Clip.none,
+                    children: [
+                      _StackAvatar(
+                        letter: 'S',
+                        background: const LinearGradient(
+                          colors: [_MainVisuals.green, Color(0xFF4ADE80)],
+                        ),
+                        textColor: Colors.white,
+                      ),
+                      const Positioned(
+                        left: 18,
+                        child: _StackAvatar(
+                          letter: 'M',
+                          background: LinearGradient(
+                            colors: [Color(0xFFF97316), Color(0xFFFB923C)],
+                          ),
+                          textColor: Colors.white,
+                        ),
+                      ),
+                      const Positioned(
+                        left: 36,
+                        child: _StackAvatar(
+                          letter: 'A',
+                          background: LinearGradient(
+                            colors: [Color(0xFF818CF8), Color(0xFFA78BFA)],
+                          ),
+                          textColor: Colors.white,
+                        ),
+                      ),
+                    ],
                   ),
-                  backgroundColor: _MainVisuals.featuredButton,
-                  foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
+                  const SizedBox(width: 84),
+                  Text(
+                    '${group.nowNum} / ${group.maxNum} members',
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: _MainVisuals.featuredMuted,
+                    ),
                   ),
-                ),
+                  const Spacer(),
+                  TextButton.icon(
+                    onPressed: onAction,
+                    icon: Icon(actionIcon, size: 16),
+                    label: Text(actionLabel),
+                    style: TextButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 10,
+                      ),
+                      backgroundColor: _MainVisuals.featuredButton,
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ],
           ),
-        ],
+        ),
       ),
     );
   }
@@ -473,6 +494,7 @@ class _CompactGroupCard extends StatelessWidget {
     required this.actionLabel,
     required this.actionIcon,
     required this.onAction,
+    this.onTap,
     this.isJoined = false,
   });
 
@@ -481,6 +503,7 @@ class _CompactGroupCard extends StatelessWidget {
   final String actionLabel;
   final IconData actionIcon;
   final VoidCallback onAction;
+  final VoidCallback? onTap;
   final bool isJoined;
 
   @override
@@ -489,88 +512,102 @@ class _CompactGroupCard extends StatelessWidget {
         ? '(no date)'
         : formatDateTime(group.dateTime!);
 
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
         borderRadius: BorderRadius.circular(22),
-        border: Border.all(color: _MainVisuals.cardBorder),
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 46,
-            height: 46,
-            decoration: BoxDecoration(
-              color: isJoined ? _MainVisuals.softMint : const Color(0xFFFFF7ED),
-              borderRadius: BorderRadius.circular(14),
-            ),
-            child: Icon(
-              isJoined
-                  ? Icons.storefront_outlined
-                  : Icons.shopping_bag_outlined,
-              color: isJoined ? _MainVisuals.green : const Color(0xFFEA580C),
-              size: 22,
-            ),
+        child: Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(22),
+            border: Border.all(color: _MainVisuals.cardBorder),
           ),
-          const SizedBox(width: 14),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  group.title,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    color: _MainVisuals.text,
-                    fontWeight: FontWeight.w800,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  '${group.location} · $dateText',
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: _MainVisuals.mutedText,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  '${group.nowNum} / ${group.maxNum} members',
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: _MainVisuals.subtleText,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(width: 12),
-          TextButton.icon(
-            onPressed: onAction,
-            icon: Icon(actionIcon, size: 16),
-            label: Text(actionLabel),
-            style: TextButton.styleFrom(
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-              backgroundColor: isJoined
-                  ? _MainVisuals.softMint
-                  : _MainVisuals.pageBackground,
-              foregroundColor: isJoined
-                  ? _MainVisuals.green
-                  : _MainVisuals.text,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-                side: BorderSide(
+          child: Row(
+            children: [
+              Container(
+                width: 46,
+                height: 46,
+                decoration: BoxDecoration(
                   color: isJoined
-                      ? _MainVisuals.softBorder
-                      : _MainVisuals.cardBorder,
+                      ? _MainVisuals.softMint
+                      : const Color(0xFFFFF7ED),
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                child: Icon(
+                  isJoined
+                      ? Icons.storefront_outlined
+                      : Icons.shopping_bag_outlined,
+                  color: isJoined
+                      ? _MainVisuals.green
+                      : const Color(0xFFEA580C),
+                  size: 22,
                 ),
               ),
-            ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      group.title,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        color: _MainVisuals.text,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      '${group.location} · $dateText',
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: _MainVisuals.mutedText,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      '${group.nowNum} / ${group.maxNum} members',
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: _MainVisuals.subtleText,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 12),
+              TextButton.icon(
+                onPressed: onAction,
+                icon: Icon(actionIcon, size: 16),
+                label: Text(actionLabel),
+                style: TextButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 14,
+                    vertical: 10,
+                  ),
+                  backgroundColor: isJoined
+                      ? _MainVisuals.softMint
+                      : _MainVisuals.pageBackground,
+                  foregroundColor: isJoined
+                      ? _MainVisuals.green
+                      : _MainVisuals.text,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    side: BorderSide(
+                      color: isJoined
+                          ? _MainVisuals.softBorder
+                          : _MainVisuals.cardBorder,
+                    ),
+                  ),
+                ),
+              ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }

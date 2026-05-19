@@ -1,11 +1,16 @@
+import 'dart:async';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import 'auth/auth_service.dart';
 import 'groupcreate.dart' as groupcreate;
 
 part 'main_page_tabs.dart';
+part 'group_page.dart';
+part 'group_settings_page.dart';
 part 'my_groups_page.dart';
 
 class MainPage extends StatefulWidget {
@@ -90,13 +95,25 @@ class _MainPageState extends State<MainPage> {
     ).showSnackBar(const SnackBar(content: Text('필터 화면은 다음 단계에서 연결할 예정이에요.')));
   }
 
-  void _showGroupDetailsPlaceholder() {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('그룹 상세 화면은 다음 단계에서 연결할 예정이에요.')),
+  Future<void> _openGroupPage(_GroupEntry group) async {
+    final result = await Navigator.of(context).push<Object?>(
+      MaterialPageRoute(
+        builder: (context) => _GroupPage(group: group, onJoinGroup: _joinGroup),
+      ),
     );
+
+    if (!mounted) {
+      return;
+    }
+
+    if (result == 'open_my_groups') {
+      setState(() {
+        _selectedIndex = 1;
+      });
+    }
   }
 
-  Future<void> _joinGroup(DocumentReference<Map<String, dynamic>> ref) async {
+  Future<bool> _joinGroup(DocumentReference<Map<String, dynamic>> ref) async {
     try {
       await FirebaseFirestore.instance.runTransaction((transaction) async {
         final snapshot = await transaction.get(ref);
@@ -114,6 +131,12 @@ class _MainPageState extends State<MainPage> {
           currentUserId: widget.user.uid,
         );
 
+        if (group.isEnded) {
+          throw FirebaseException(
+            plugin: 'cloud_firestore',
+            message: '이미 종료된 그룹이에요.',
+          );
+        }
         if (group.isMember) {
           throw FirebaseException(
             plugin: 'cloud_firestore',
@@ -135,18 +158,20 @@ class _MainPageState extends State<MainPage> {
       });
 
       if (!mounted) {
-        return;
+        return true;
       }
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(const SnackBar(content: Text('그룹에 참여했어요.')));
+      return true;
     } catch (error) {
       if (!mounted) {
-        return;
+        return false;
       }
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(content: Text('참여 실패: $error')));
+      return false;
     }
   }
 
@@ -213,11 +238,18 @@ class _MainPageState extends State<MainPage> {
                     groupEntries.where((entry) => entry.isJoinable).toList()
                       ..sort(_sortOpenGroups);
                 final hostedGroupEntries =
-                    groupEntries.where((entry) => entry.isOwner).toList()
+                    groupEntries
+                        .where((entry) => entry.isOwner && !entry.isEnded)
+                        .toList()
                       ..sort(_sortMyGroups);
                 final joinedGroupEntries =
                     groupEntries
-                        .where((entry) => entry.isMember && !entry.isOwner)
+                        .where(
+                          (entry) =>
+                              entry.isMember &&
+                              !entry.isOwner &&
+                              !entry.isEnded,
+                        )
                         .toList()
                       ..sort(_sortMyGroups);
                 final homePage = _HomeTab(
@@ -229,6 +261,7 @@ class _MainPageState extends State<MainPage> {
                   onCreateGroup: _openCreateGroup,
                   onEditPreferredLocation: _editPreferredLocation,
                   onFilterPressed: _showFilterPlaceholder,
+                  onOpenGroup: _openGroupPage,
                   onJoinGroup: _joinGroup,
                 );
 
@@ -237,7 +270,7 @@ class _MainPageState extends State<MainPage> {
                   hostedGroups: hostedGroupEntries,
                   joinedGroups: joinedGroupEntries,
                   onCreateGroup: _openCreateGroup,
-                  onOpenGroup: _showGroupDetailsPlaceholder,
+                  onOpenGroup: _openGroupPage,
                 );
 
                 // TODO: Implement the My Page screen with profile editing and account settings.
@@ -282,7 +315,8 @@ class _GroupEntry {
     required this.id,
     required this.data,
     required this.currentUserId,
-  }) : reference = null;
+    this.reference,
+  });
 
   final String id;
   final Map<String, dynamic> data;
@@ -294,6 +328,16 @@ class _GroupEntry {
   String get title => data['name']?.toString() ?? '(no name)';
 
   String get location => data['location']?.toString() ?? '(no location)';
+
+  String get status => data['status']?.toString() ?? 'active';
+
+  bool get isEnded => status == 'ended';
+
+  String get recruitmentStatus => data['recruitment_status']?.toString() ?? 'open';
+
+  bool get isRecruitmentOpen => recruitmentStatus == 'open';
+
+  bool get isRecruitmentClosed => recruitmentStatus == 'closed';
 
   int get maxNum => _readInt(data['max_num'], fallback: 0);
 
@@ -316,9 +360,9 @@ class _GroupEntry {
 
   bool get isMember => memberIds.contains(currentUserId);
 
-  bool get isFull => maxNum > 0 && nowNum >= maxNum;
+  bool get isFull => !isEnded && maxNum > 0 && nowNum >= maxNum;
 
-  bool get isJoinable => !isMember && !isFull;
+  bool get isJoinable => !isEnded && isRecruitmentOpen && !isMember && !isFull;
 
   int get remainingSlots => maxNum <= 0 ? 0 : maxNum - nowNum;
 
@@ -347,6 +391,9 @@ DateTime? _readDateTime(dynamic value) {
   }
   if (value is String) {
     return DateTime.tryParse(value);
+  }
+  if (value is DateTime) {
+    return value;
   }
   return null;
 }

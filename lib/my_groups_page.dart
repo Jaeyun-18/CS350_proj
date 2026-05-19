@@ -13,7 +13,7 @@ class _MyGroupsTab extends StatelessWidget {
   final List<_GroupEntry> hostedGroups;
   final List<_GroupEntry> joinedGroups;
   final VoidCallback onCreateGroup;
-  final VoidCallback onOpenGroup;
+  final ValueChanged<_GroupEntry> onOpenGroup;
 
   @override
   Widget build(BuildContext context) {
@@ -131,7 +131,8 @@ class _MyGroupsTab extends StatelessWidget {
               actionLabel: 'Host',
               actionIcon: Icons.manage_search_rounded,
               badgeLabel: 'HOST',
-              onAction: onOpenGroup,
+              onTap: () => onOpenGroup(hostedGroups.first),
+              onAction: () => onOpenGroup(hostedGroups.first),
             ),
             const SizedBox(height: 12),
             for (final group in hostedGroups.skip(1)) ...[
@@ -140,7 +141,8 @@ class _MyGroupsTab extends StatelessWidget {
                 formatDateTime: _formatDateTime,
                 actionLabel: 'Edit',
                 actionIcon: Icons.edit_outlined,
-                onAction: onOpenGroup,
+                onTap: () => onOpenGroup(group),
+                onAction: () => onOpenGroup(group),
                 isJoined: true,
               ),
               const SizedBox(height: 12),
@@ -168,7 +170,8 @@ class _MyGroupsTab extends StatelessWidget {
                 formatDateTime: _formatDateTime,
                 actionLabel: 'View',
                 actionIcon: Icons.chevron_right_rounded,
-                onAction: onOpenGroup,
+                onTap: () => onOpenGroup(group),
+                onAction: () => onOpenGroup(group),
                 isJoined: true,
               ),
               const SizedBox(height: 12),
