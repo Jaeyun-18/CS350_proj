@@ -335,13 +335,188 @@ class _HomeTab extends StatelessWidget {
   }
 }
 
-class _BlankTab extends StatelessWidget {
-  const _BlankTab();
+class _MyPageTab extends StatelessWidget {
+  const _MyPageTab({
+    required this.displayName,
+    required this.email,
+    required this.preferredLocation,
+    required this.emailVerified,
+    required this.onEditPreferredLocation,
+    required this.onLogout,
+  });
+
+  final String displayName;
+  final String email;
+  final String? preferredLocation;
+  final bool emailVerified;
+  final Future<void> Function(String? currentValue) onEditPreferredLocation;
+  final VoidCallback onLogout;
 
   @override
   Widget build(BuildContext context) {
-    // TODO: Replace this blank tab with the real page implementation.
-    return const SizedBox.expand();
+    final initial = displayName.isNotEmpty ? displayName[0].toUpperCase() : 'W';
+    return SafeArea(
+      child: ListView(
+        padding: const EdgeInsets.fromLTRB(20, 20, 20, 24),
+        children: [
+          Text(
+            'My Page',
+            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+              color: _MainVisuals.text,
+              fontWeight: FontWeight.w900,
+              letterSpacing: -0.4,
+            ),
+          ),
+          const SizedBox(height: 18),
+          Container(
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              gradient: _MainVisuals.featuredGradient,
+              borderRadius: BorderRadius.circular(28),
+            ),
+            child: Row(
+              children: [
+                Container(
+                  width: 64,
+                  height: 64,
+                  decoration: BoxDecoration(
+                    gradient: _MainVisuals.primaryGradient,
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Center(
+                    child: Text(
+                      initial,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w900,
+                        fontSize: 26,
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        displayName,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w900,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        email,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          color: _MainVisuals.featuredMuted,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 16),
+          _InfoPanel(
+            title: 'ACCOUNT',
+            child: Column(
+              children: [
+                _DetailRow(
+                  icon: Icons.mail_outline_rounded,
+                  label: '이메일',
+                  value: email,
+                ),
+                const SizedBox(height: 12),
+                _DetailRow(
+                  icon: emailVerified
+                      ? Icons.verified_rounded
+                      : Icons.schedule_rounded,
+                  label: '이메일 인증',
+                  value: emailVerified ? '인증 완료' : '인증 대기 중',
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 16),
+          _InfoPanel(
+            title: 'PREFERENCES',
+            child: InkWell(
+              onTap: () => onEditPreferredLocation(preferredLocation),
+              borderRadius: BorderRadius.circular(14),
+              child: Row(
+                children: [
+                  Container(
+                    width: 38,
+                    height: 38,
+                    decoration: BoxDecoration(
+                      color: _MainVisuals.softMint,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: const Icon(
+                      Icons.location_on_outlined,
+                      color: _MainVisuals.green,
+                      size: 18,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          '선호 위치',
+                          style: Theme.of(context).textTheme.labelMedium
+                              ?.copyWith(
+                                color: _MainVisuals.mutedText,
+                                fontWeight: FontWeight.w700,
+                              ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          preferredLocation ?? '미설정',
+                          style: Theme.of(context).textTheme.bodyMedium
+                              ?.copyWith(
+                                color: _MainVisuals.text,
+                                fontWeight: FontWeight.w700,
+                              ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const Icon(
+                    Icons.chevron_right_rounded,
+                    color: _MainVisuals.subtleText,
+                  ),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: 20),
+          OutlinedButton.icon(
+            onPressed: onLogout,
+            icon: const Icon(Icons.logout_rounded),
+            label: const Text('로그아웃'),
+            style: OutlinedButton.styleFrom(
+              minimumSize: const Size.fromHeight(56),
+              foregroundColor: const Color(0xFFDC2626),
+              side: const BorderSide(color: Color(0xFFFECACA)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(18),
+              ),
+              backgroundColor: const Color(0xFFFFF1F2),
+              textStyle: const TextStyle(fontWeight: FontWeight.w800),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }
 

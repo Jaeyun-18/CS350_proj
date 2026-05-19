@@ -95,6 +95,32 @@ class _MainPageState extends State<MainPage> {
     );
   }
 
+  Future<void> _confirmLogout() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('로그아웃할까요?'),
+          content: const Text('다시 사용하려면 로그인이 필요해요.'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: const Text('취소'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.of(context).pop(true),
+              child: const Text('로그아웃'),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (confirmed == true) {
+      await AuthService.instance.signOut();
+    }
+  }
+
   Future<void> _openFilter() async {
     final result = await showGroupFilterSheet(context, _filter);
     if (result != null && mounted) {
@@ -374,8 +400,14 @@ class _MainPageState extends State<MainPage> {
                   onOpenChat: _openChat,
                 );
 
-                // TODO: Implement the My Page screen with profile editing and account settings.
-                const myPage = _BlankTab();
+                final myPage = _MyPageTab(
+                  displayName: displayName,
+                  email: widget.user.email ?? '이메일 없음',
+                  preferredLocation: preferredLocation,
+                  emailVerified: emailVerified,
+                  onEditPreferredLocation: _editPreferredLocation,
+                  onLogout: _confirmLogout,
+                );
 
                 final pages = <Widget>[homePage, myGroupsPage, myPage];
 
