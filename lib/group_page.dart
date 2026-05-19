@@ -143,6 +143,17 @@ class _GroupPageState extends State<_GroupPage> {
     }
 
     try {
+      // 멤버 제거 전(아직 멤버일 때) 이탈 안내를 채팅에 남긴다.
+      try {
+        await FirestoreChatService.instance.postMembershipNotice(
+          groupId: _group.id,
+          uid: _group.currentUserId,
+          joined: false,
+        );
+      } on Exception catch (_) {
+        // 시스템 메시지 실패는 나가기 자체를 막지 않는다.
+      }
+
       await FirebaseFirestore.instance.runTransaction((transaction) async {
         final snapshot = await transaction.get(_group.docRef);
         if (!snapshot.exists) {

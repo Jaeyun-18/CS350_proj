@@ -128,6 +128,9 @@ class _ChatPageState extends State<ChatPage> {
                     separatorBuilder: (_, _) => const SizedBox(height: 14),
                     itemBuilder: (context, index) {
                       final message = messages[index];
+                      if (message.isSystem) {
+                        return _SystemMessageChip(text: message.text);
+                      }
                       return _MessageBubble(
                         message: message,
                         isMine: message.senderId == widget.currentUserId,
@@ -465,6 +468,34 @@ class _ChatComposer extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _SystemMessageChip extends StatelessWidget {
+  const _SystemMessageChip({required this.text});
+
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
+        decoration: BoxDecoration(
+          color: _chatDivider,
+          borderRadius: BorderRadius.circular(20),
+        ),
+        child: Text(
+          text,
+          textAlign: TextAlign.center,
+          style: const TextStyle(
+            color: _chatSubtle,
+            fontSize: 12,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
       ),
     );
   }

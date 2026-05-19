@@ -7,6 +7,7 @@ import 'package:flutter/services.dart';
 
 import 'auth/auth_service.dart';
 import 'chat_page.dart';
+import 'chat_service.dart';
 import 'group_filter.dart';
 import 'group_items.dart';
 import 'group_items_editor.dart';
@@ -177,6 +178,16 @@ class _MainPageState extends State<MainPage> {
           'updatedAt': FieldValue.serverTimestamp(),
         });
       });
+
+      try {
+        await FirestoreChatService.instance.postMembershipNotice(
+          groupId: ref.id,
+          uid: widget.user.uid,
+          joined: true,
+        );
+      } on Exception catch (_) {
+        // 시스템 메시지 실패는 참여 자체를 막지 않는다.
+      }
 
       if (!mounted) {
         return true;

@@ -24,7 +24,8 @@ service cloud.firestore {
     match /group/{groupId} {
       allow read, write: if isSignedIn();
 
-      // Chat messages: only group members may read or post.
+      // Chat messages: only group members may read or post. Membership
+      // notices are written by the leaving member before they are removed.
       match /messages/{messageId} {
         allow read: if isGroupMember(groupId);
         allow create: if isGroupMember(groupId)

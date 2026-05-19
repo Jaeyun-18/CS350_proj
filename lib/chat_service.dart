@@ -12,6 +12,7 @@ class ChatMessage {
     required this.senderId,
     required this.senderName,
     required this.createdAt,
+    this.type = 'user',
   });
 
   factory ChatMessage.fromSnapshot(
@@ -25,6 +26,7 @@ class ChatMessage {
       senderId: data['senderId']?.toString() ?? '',
       senderName: data['senderName']?.toString() ?? '학생',
       createdAt: rawCreatedAt is Timestamp ? rawCreatedAt.toDate() : null,
+      type: data['type']?.toString() == 'system' ? 'system' : 'user',
     );
   }
 
@@ -35,6 +37,11 @@ class ChatMessage {
 
   /// Null while the server timestamp for a just-sent message is still pending.
   final DateTime? createdAt;
+
+  /// 'user'(일반 메시지) 또는 'system'(참여/이탈 안내).
+  final String type;
+
+  bool get isSystem => type == 'system';
 }
 
 /// Read/write access to a group's realtime chat messages.
@@ -105,6 +112,24 @@ class FirestoreChatService implements ChatService {
       'text': trimmed,
       'senderId': senderId,
       'senderName': senderName,
+      'type': 'user',
+      'createdAt': FieldValue.serverTimestamp(),
+    });
+  }
+
+  /// 멤버 참여/이탈을 채팅방에 시스템 메시지로 남긴다.
+  Future<void> postMembershipNotice({
+    required String groupId,
+    required String uid,
+    required bool joined,
+  }) async {
+    final name = await _resolveDisplayName(uid);
+    final text = joined ? '$name님이 참여했어요.' : '$name님이 그룹에서 나갔어요.';
+    await _messagesRef(groupId).add({
+      'text': text,
+      'senderId': uid,
+      'senderName': name,
+      'type': 'system',
       'createdAt': FieldValue.serverTimestamp(),
     });
   }
