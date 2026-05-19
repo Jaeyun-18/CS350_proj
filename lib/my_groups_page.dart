@@ -7,6 +7,7 @@ class _MyGroupsTab extends StatelessWidget {
     required this.joinedGroups,
     required this.onCreateGroup,
     required this.onOpenGroup,
+    required this.onOpenChat,
   });
 
   final String displayName;
@@ -14,6 +15,7 @@ class _MyGroupsTab extends StatelessWidget {
   final List<_GroupEntry> joinedGroups;
   final VoidCallback onCreateGroup;
   final ValueChanged<_GroupEntry> onOpenGroup;
+  final ValueChanged<_GroupEntry> onOpenChat;
 
   @override
   Widget build(BuildContext context) {
@@ -133,6 +135,7 @@ class _MyGroupsTab extends StatelessWidget {
               badgeLabel: 'HOST',
               onTap: () => onOpenGroup(hostedGroups.first),
               onAction: () => onOpenGroup(hostedGroups.first),
+              onChat: () => onOpenChat(hostedGroups.first),
             ),
             const SizedBox(height: 12),
             for (final group in hostedGroups.skip(1)) ...[
@@ -143,6 +146,7 @@ class _MyGroupsTab extends StatelessWidget {
                 actionIcon: Icons.edit_outlined,
                 onTap: () => onOpenGroup(group),
                 onAction: () => onOpenGroup(group),
+                onChat: () => onOpenChat(group),
                 isJoined: true,
               ),
               const SizedBox(height: 12),
@@ -172,6 +176,7 @@ class _MyGroupsTab extends StatelessWidget {
                 actionIcon: Icons.chevron_right_rounded,
                 onTap: () => onOpenGroup(group),
                 onAction: () => onOpenGroup(group),
+                onChat: () => onOpenChat(group),
                 isJoined: true,
               ),
               const SizedBox(height: 12),

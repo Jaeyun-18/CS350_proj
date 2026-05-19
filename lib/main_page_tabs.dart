@@ -317,6 +317,7 @@ class _FeaturedGroupCard extends StatelessWidget {
     required this.badgeLabel,
     required this.onAction,
     this.onTap,
+    this.onChat,
   });
 
   final _GroupEntry group;
@@ -326,6 +327,7 @@ class _FeaturedGroupCard extends StatelessWidget {
   final String badgeLabel;
   final VoidCallback onAction;
   final VoidCallback? onTap;
+  final VoidCallback? onChat;
 
   @override
   Widget build(BuildContext context) {
@@ -461,6 +463,10 @@ class _FeaturedGroupCard extends StatelessWidget {
                     ),
                   ),
                   const Spacer(),
+                  if (onChat != null) ...[
+                    _CardChatButton(onPressed: onChat!),
+                    const SizedBox(width: 8),
+                  ],
                   TextButton.icon(
                     onPressed: onAction,
                     icon: Icon(actionIcon, size: 16),
@@ -495,6 +501,7 @@ class _CompactGroupCard extends StatelessWidget {
     required this.actionIcon,
     required this.onAction,
     this.onTap,
+    this.onChat,
     this.isJoined = false,
   });
 
@@ -504,6 +511,7 @@ class _CompactGroupCard extends StatelessWidget {
   final IconData actionIcon;
   final VoidCallback onAction;
   final VoidCallback? onTap;
+  final VoidCallback? onChat;
   final bool isJoined;
 
   @override
@@ -580,6 +588,10 @@ class _CompactGroupCard extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: 12),
+              if (onChat != null) ...[
+                _CardChatButton(onPressed: onChat!),
+                const SizedBox(width: 8),
+              ],
               TextButton.icon(
                 onPressed: onAction,
                 icon: Icon(actionIcon, size: 16),
@@ -746,6 +758,37 @@ class _StatsChip extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _CardChatButton extends StatelessWidget {
+  const _CardChatButton({required this.onPressed});
+
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: _MainVisuals.softMint,
+      borderRadius: BorderRadius.circular(12),
+      child: InkWell(
+        onTap: onPressed,
+        borderRadius: BorderRadius.circular(12),
+        child: Container(
+          width: 40,
+          height: 40,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: _MainVisuals.softBorder),
+          ),
+          child: const Icon(
+            Icons.chat_bubble_outline_rounded,
+            color: _MainVisuals.green,
+            size: 18,
+          ),
+        ),
       ),
     );
   }

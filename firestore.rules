@@ -1,0 +1,38 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    // True when the signed-in user is listed in the group's member_ids array.
+    function isGroupMember(groupId) {
+      return isSignedIn()
+        && request.auth.uid in
+          get(/databases/$(database)/documents/group/$(groupId))
+            .data.member_ids;
+    }
+
+    // User profiles: any signed-in user may read/write.
+    match /users/{userId} {
+      allow read, write: if isSignedIn();
+    }
+
+    // Groups: any signed-in user may read/write (joins, settings, etc.).
+    match /group/{groupId} {
+      allow read, write: if isSignedIn();
+
+      // Chat messages: only group members may read or post.
+      match /messages/{messageId} {
+        allow read: if isGroupMember(groupId);
+        allow create: if isGroupMember(groupId)
+          && request.resource.data.senderId == request.auth.uid
+          && request.resource.data.text is string
+          && request.resource.data.text.size() > 0;
+        allow update, delete: if false;
+      }
+    }
+  }
+}

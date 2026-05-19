@@ -212,10 +212,17 @@ class _GroupPageState extends State<_GroupPage> {
     _applyGroupData(result);
   }
 
-  void _showComingSoon(String message) {
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(SnackBar(content: Text(message)));
+  void _openChat() {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => ChatPage(
+          groupId: _group.id,
+          groupName: _group.title,
+          memberCount: _group.nowNum,
+          currentUserId: _group.currentUserId,
+        ),
+      ),
+    );
   }
 
   @override
@@ -412,9 +419,7 @@ class _GroupPageState extends State<_GroupPage> {
         label: '채팅',
         icon: Icons.chat_bubble_outline_rounded,
         filled: true,
-        onPressed: () {
-          _showComingSoon('채팅 화면은 다음 단계에서 연결할 예정이에요.');
-        },
+        onPressed: _openChat,
       );
     }
 
@@ -426,9 +431,7 @@ class _GroupPageState extends State<_GroupPage> {
               label: '채팅',
               icon: Icons.chat_bubble_outline_rounded,
               filled: true,
-              onPressed: () {
-                _showComingSoon('채팅 화면은 다음 단계에서 연결할 예정이에요.');
-              },
+              onPressed: _openChat,
             ),
           ),
           const SizedBox(width: 12),

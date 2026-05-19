@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import 'auth/auth_service.dart';
+import 'chat_page.dart';
 import 'groupcreate.dart' as groupcreate;
 
 part 'main_page_tabs.dart';
@@ -111,6 +112,19 @@ class _MainPageState extends State<MainPage> {
         _selectedIndex = 1;
       });
     }
+  }
+
+  void _openChat(_GroupEntry group) {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => ChatPage(
+          groupId: group.id,
+          groupName: group.title,
+          memberCount: group.nowNum,
+          currentUserId: widget.user.uid,
+        ),
+      ),
+    );
   }
 
   Future<bool> _joinGroup(DocumentReference<Map<String, dynamic>> ref) async {
@@ -271,6 +285,7 @@ class _MainPageState extends State<MainPage> {
                   joinedGroups: joinedGroupEntries,
                   onCreateGroup: _openCreateGroup,
                   onOpenGroup: _openGroupPage,
+                  onOpenChat: _openChat,
                 );
 
                 // TODO: Implement the My Page screen with profile editing and account settings.
@@ -333,7 +348,8 @@ class _GroupEntry {
 
   bool get isEnded => status == 'ended';
 
-  String get recruitmentStatus => data['recruitment_status']?.toString() ?? 'open';
+  String get recruitmentStatus =>
+      data['recruitment_status']?.toString() ?? 'open';
 
   bool get isRecruitmentOpen => recruitmentStatus == 'open';
 
