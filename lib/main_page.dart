@@ -7,6 +7,7 @@ import 'package:flutter/services.dart';
 
 import 'auth/auth_service.dart';
 import 'chat_page.dart';
+import 'group_filter.dart';
 import 'group_items.dart';
 import 'group_items_editor.dart';
 import 'groupcreate.dart' as groupcreate;
@@ -28,6 +29,7 @@ class MainPage extends StatefulWidget {
 class _MainPageState extends State<MainPage> {
   late final Future<void> _profileInitFuture;
   int _selectedIndex = 0;
+  GroupFilter _filter = GroupFilter();
 
   @override
   void initState() {
@@ -92,10 +94,13 @@ class _MainPageState extends State<MainPage> {
     );
   }
 
-  void _showFilterPlaceholder() {
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(const SnackBar(content: Text('필터 화면은 다음 단계에서 연결할 예정이에요.')));
+  Future<void> _openFilter() async {
+    final result = await showGroupFilterSheet(context, _filter);
+    if (result != null && mounted) {
+      setState(() {
+        _filter = result;
+      });
+    }
   }
 
   Future<void> _openGroupPage(_GroupEntry group) async {
@@ -251,7 +256,16 @@ class _MainPageState extends State<MainPage> {
                     )
                     .toList();
                 final openGroupEntries =
-                    groupEntries.where((entry) => entry.isJoinable).toList()
+                    groupEntries
+                        .where(
+                          (entry) =>
+                              entry.isJoinable &&
+                              _filter.matches(
+                                location: entry.location,
+                                itemCategories: categoriesOf(entry.items),
+                              ),
+                        )
+                        .toList()
                       ..sort(_sortOpenGroups);
                 final hostedGroupEntries =
                     groupEntries
@@ -276,7 +290,8 @@ class _MainPageState extends State<MainPage> {
                   openGroups: openGroupEntries,
                   onCreateGroup: _openCreateGroup,
                   onEditPreferredLocation: _editPreferredLocation,
-                  onFilterPressed: _showFilterPlaceholder,
+                  onFilterPressed: _openFilter,
+                  activeFilterCount: _filter.activeCount,
                   onOpenGroup: _openGroupPage,
                   onJoinGroup: _joinGroup,
                 );

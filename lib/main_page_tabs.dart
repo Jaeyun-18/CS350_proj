@@ -10,6 +10,7 @@ class _HomeTab extends StatelessWidget {
     required this.onCreateGroup,
     required this.onEditPreferredLocation,
     required this.onFilterPressed,
+    required this.activeFilterCount,
     required this.onOpenGroup,
     required this.onJoinGroup,
   });
@@ -22,6 +23,7 @@ class _HomeTab extends StatelessWidget {
   final VoidCallback onCreateGroup;
   final Future<void> Function(String? currentValue) onEditPreferredLocation;
   final VoidCallback onFilterPressed;
+  final int activeFilterCount;
   final ValueChanged<_GroupEntry> onOpenGroup;
   final Future<bool> Function(DocumentReference<Map<String, dynamic>> ref)
   onJoinGroup;
@@ -144,7 +146,42 @@ class _HomeTab extends StatelessWidget {
                     gradient: _MainVisuals.greenGradient,
                     borderRadius: BorderRadius.circular(18),
                   ),
-                  child: const Icon(Icons.tune_rounded, color: Colors.white),
+                  child: Stack(
+                    clipBehavior: Clip.none,
+                    alignment: Alignment.center,
+                    children: [
+                      const Icon(Icons.tune_rounded, color: Colors.white),
+                      if (activeFilterCount > 0)
+                        Positioned(
+                          right: -4,
+                          top: -4,
+                          child: Container(
+                            padding: const EdgeInsets.all(3),
+                            constraints: const BoxConstraints(
+                              minWidth: 18,
+                              minHeight: 18,
+                            ),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFF97316),
+                              borderRadius: BorderRadius.circular(9),
+                              border: Border.all(
+                                color: Colors.white,
+                                width: 1.5,
+                              ),
+                            ),
+                            child: Text(
+                              '$activeFilterCount',
+                              textAlign: TextAlign.center,
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 10,
+                                fontWeight: FontWeight.w800,
+                              ),
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
                 ),
               ),
             ],
