@@ -7,6 +7,8 @@ import 'package:flutter/services.dart';
 
 import 'auth/auth_service.dart';
 import 'chat_page.dart';
+import 'group_items.dart';
+import 'group_items_editor.dart';
 import 'groupcreate.dart' as groupcreate;
 
 part 'main_page_tabs.dart';
@@ -371,6 +373,8 @@ class _GroupEntry {
     }
     return [ownerId];
   }
+
+  List<GroupItem> get items => readGroupItems(data);
 
   bool get isOwner => ownerId == currentUserId;
 

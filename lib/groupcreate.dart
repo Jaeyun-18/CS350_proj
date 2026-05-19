@@ -4,6 +4,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'firebase_options.dart';
+import 'group_items.dart';
+import 'group_items_editor.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -49,6 +51,7 @@ class GroupCreateState extends State<GroupCreatePage> {
   DateTime? _selectedDate;
   TimeOfDay? _selectedTime;
   int _maxMembers = 2;
+  List<GroupItem> _items = <GroupItem>[];
 
   Future<void> _pickDate() async {
     final now = DateTime.now();
@@ -147,6 +150,7 @@ class GroupCreateState extends State<GroupCreatePage> {
         'member_ids': [user.uid],
         'status': 'active',
         'recruitment_status': 'open',
+        'items': itemsToMaps(_items),
       });
       _textController.clear();
       setState(() {
@@ -154,6 +158,7 @@ class GroupCreateState extends State<GroupCreatePage> {
         _selectedDate = null;
         _selectedTime = null;
         _maxMembers = 2;
+        _items = <GroupItem>[];
       });
       _maxMembersController.value = const TextEditingValue(
         text: '2',
@@ -420,6 +425,18 @@ class GroupCreateState extends State<GroupCreatePage> {
                       ),
                     ],
                   ),
+                ),
+              ),
+              const SizedBox(height: 14),
+              _CreateSectionCard(
+                title: 'SHARED ITEMS (선택)',
+                child: GroupItemsEditor(
+                  items: _items,
+                  onChanged: (value) {
+                    setState(() {
+                      _items = value;
+                    });
+                  },
                 ),
               ),
               const SizedBox(height: 14),

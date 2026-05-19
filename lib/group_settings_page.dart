@@ -24,6 +24,7 @@ class _GroupSettingsPageState extends State<_GroupSettingsPage> {
   TimeOfDay? _selectedTime;
   int _maxMembers = 2;
   bool _isSaving = false;
+  late List<GroupItem> _items;
 
   @override
   void initState() {
@@ -37,6 +38,7 @@ class _GroupSettingsPageState extends State<_GroupSettingsPage> {
       _selectedDate = DateTime(dateTime.year, dateTime.month, dateTime.day);
       _selectedTime = TimeOfDay(hour: dateTime.hour, minute: dateTime.minute);
     }
+    _items = widget.group.items;
   }
 
   @override
@@ -144,10 +146,12 @@ class _GroupSettingsPageState extends State<_GroupSettingsPage> {
         'location': location,
         'date_time': Timestamp.fromDate(dateTime),
         'max_num': _maxMembers,
+        'items': itemsToMaps(_items),
         'updatedAt': FieldValue.serverTimestamp(),
         'status': widget.group.status == 'ended' ? 'ended' : 'active',
       };
 
+      await saveGroupItems(groupRef: widget.group.docRef, editedItems: _items);
       await widget.group.docRef.update({
         'name': title,
         'location': location,
@@ -600,30 +604,15 @@ class _GroupSettingsPageState extends State<_GroupSettingsPage> {
                   ),
                 ),
                 const SizedBox(height: 14),
-                Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFF0FAF4),
-                    borderRadius: BorderRadius.circular(20),
-                    border: Border.all(color: const Color(0xFFD1FAE5)),
-                  ),
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Icon(
-                        Icons.info_outline_rounded,
-                        color: _MainVisuals.green,
-                        size: 18,
-                      ),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: Text(
-                          '물품 정보는 아직 준비 중이라 여기서는 그룹 기본 정보만 수정할 수 있어요.',
-                          style: Theme.of(context).textTheme.bodyMedium
-                              ?.copyWith(color: _MainVisuals.locationText),
-                        ),
-                      ),
-                    ],
+                _SectionCard(
+                  title: 'SHARED ITEMS',
+                  child: GroupItemsEditor(
+                    items: _items,
+                    onChanged: (value) {
+                      setState(() {
+                        _items = value;
+                      });
+                    },
                   ),
                 ),
                 const SizedBox(height: 20),

@@ -225,6 +225,38 @@ class _GroupPageState extends State<_GroupPage> {
     );
   }
 
+  Future<void> _claimItem(String itemId) async {
+    try {
+      await toggleItemClaim(
+        groupRef: _group.docRef,
+        itemId: itemId,
+        uid: _group.currentUserId,
+      );
+      final snapshot = await _group.docRef.get();
+      if (!mounted) {
+        return;
+      }
+      final data = snapshot.data();
+      if (data != null) {
+        _applyGroupData(data);
+      }
+    } on StateError catch (error) {
+      if (!mounted) {
+        return;
+      }
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(error.message)));
+    } on FirebaseException catch (error) {
+      if (!mounted) {
+        return;
+      }
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('담당 변경 실패: ${error.message}')));
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final dateText = _group.dateTime == null
@@ -344,34 +376,12 @@ class _GroupPageState extends State<_GroupPage> {
               const SizedBox(height: 16),
               _InfoPanel(
                 title: 'ITEMS',
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // TODO: 물품 목록과 수량 분담 UI를 연결해야 함.
-                    Text(
-                      '물품 정보와 분담 항목은 아직 준비 중이에요.',
-                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: _MainVisuals.mutedText,
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        color: _MainVisuals.softMint,
-                        borderRadius: BorderRadius.circular(18),
-                        border: Border.all(color: _MainVisuals.softBorder),
-                      ),
-                      child: const Text(
-                        'TODO: 물품 목록과 수량 분담 UI를 이 위치에 연결할 예정입니다.',
-                        style: TextStyle(
-                          color: _MainVisuals.locationText,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ),
-                  ],
+                child: _GroupItemsView(
+                  items: _group.items,
+                  isMember: _isMember,
+                  isEnded: _isEnded,
+                  currentUserId: _group.currentUserId,
+                  onToggleClaim: _claimItem,
                 ),
               ),
               const SizedBox(height: 16),
@@ -816,4 +826,165 @@ String _formatGroupDateTime(DateTime value) {
   final h = value.hour.toString().padLeft(2, '0');
   final min = value.minute.toString().padLeft(2, '0');
   return '$y-$m-$d $h:$min';
+}
+
+class _GroupItemsView extends StatelessWidget {
+  const _GroupItemsView({
+    required this.items,
+    required this.isMember,
+    required this.isEnded,
+    required this.currentUserId,
+    required this.onToggleClaim,
+  });
+
+  final List<GroupItem> items;
+  final bool isMember;
+  final bool isEnded;
+  final String currentUserId;
+  final ValueChanged<String> onToggleClaim;
+
+  @override
+  Widget build(BuildContext context) {
+    if (items.isEmpty) {
+      return Text(
+        '아직 등록된 품목이 없어요. 호스트가 그룹 설정에서 추가할 수 있어요.',
+        style: Theme.of(
+          context,
+        ).textTheme.bodyMedium?.copyWith(color: _MainVisuals.mutedText),
+      );
+    }
+
+    final claimedCount = items.where((item) => item.isClaimed).length;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          '품목 ${items.length}개 · 담당 완료 $claimedCount개',
+          style: Theme.of(
+            context,
+          ).textTheme.bodySmall?.copyWith(color: _MainVisuals.mutedText),
+        ),
+        const SizedBox(height: 12),
+        for (var i = 0; i < items.length; i++) ...[
+          if (i > 0) const SizedBox(height: 10),
+          _GroupItemTile(
+            item: items[i],
+            isMine: items[i].claimedBy == currentUserId,
+            canClaim: isMember && !isEnded,
+            onToggle: () => onToggleClaim(items[i].id),
+          ),
+        ],
+      ],
+    );
+  }
+}
+
+class _GroupItemTile extends StatelessWidget {
+  const _GroupItemTile({
+    required this.item,
+    required this.isMine,
+    required this.canClaim,
+    required this.onToggle,
+  });
+
+  final GroupItem item;
+  final bool isMine;
+  final bool canClaim;
+  final VoidCallback onToggle;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: _MainVisuals.pageBackground,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: _MainVisuals.cardBorder),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  item.name,
+                  style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                    color: _MainVisuals.text,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  '${item.category} · ${item.quantity}개',
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: _MainVisuals.mutedText,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 12),
+          _buildClaimAction(),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildClaimAction() {
+    if (isMine) {
+      return TextButton.icon(
+        onPressed: canClaim ? onToggle : null,
+        icon: const Icon(Icons.check_circle_rounded, size: 16),
+        label: const Text('내가 담당'),
+        style: TextButton.styleFrom(
+          foregroundColor: _MainVisuals.green,
+          backgroundColor: _MainVisuals.softMint,
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+        ),
+      );
+    }
+
+    if (item.isClaimed) {
+      return Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        decoration: BoxDecoration(
+          color: const Color(0xFFF1F5F9),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: const Text(
+          '담당 완료',
+          style: TextStyle(
+            color: _MainVisuals.mutedText,
+            fontWeight: FontWeight.w700,
+            fontSize: 13,
+          ),
+        ),
+      );
+    }
+
+    if (!canClaim) {
+      return const Text(
+        '미정',
+        style: TextStyle(
+          color: _MainVisuals.subtleText,
+          fontWeight: FontWeight.w700,
+        ),
+      );
+    }
+
+    return TextButton(
+      onPressed: onToggle,
+      style: TextButton.styleFrom(
+        foregroundColor: Colors.white,
+        backgroundColor: _MainVisuals.green,
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      ),
+      child: const Text('담당하기'),
+    );
+  }
 }
