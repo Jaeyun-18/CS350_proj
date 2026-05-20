@@ -12,6 +12,7 @@ import 'group_filter.dart';
 import 'group_items.dart';
 import 'group_items_editor.dart';
 import 'groupcreate.dart' as groupcreate;
+import 'messaging_service.dart';
 
 part 'main_page_tabs.dart';
 part 'group_page.dart';
@@ -36,6 +37,8 @@ class _MainPageState extends State<MainPage> {
   void initState() {
     super.initState();
     _profileInitFuture = AuthService.instance.ensureProfile(widget.user);
+    // 로그인 직후 FCM 토큰 등록(외부 인프라 미구성이면 silent no-op).
+    unawaited(MessagingService.instance.registerForUser(widget.user.uid));
   }
 
   Future<void> _editPreferredLocation(String? currentValue) async {
@@ -117,6 +120,7 @@ class _MainPageState extends State<MainPage> {
     );
 
     if (confirmed == true) {
+      await MessagingService.instance.unregister();
       await AuthService.instance.signOut();
     }
   }

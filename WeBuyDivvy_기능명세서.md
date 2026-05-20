@@ -24,7 +24,7 @@ KAIST 학생이 대용량 식료품을 함께 구매하고, 비용과 수량을 
 ## 2. 현재 구현 범위 요약
 
 - 완료: KAIST 이메일 로그인/회원가입/비밀번호 재설정, 이메일 인증 링크, 닉네임 중복 확인, 홈의 참여 가능 그룹 피드(위치/품목 카테고리 필터 포함), 그룹 상세, 그룹 참여/나가기(동일 품목 카테고리 중복 참여 제한), 그룹 생성, 그룹 설정, 모집 종료/재개, 내 그룹의 호스팅/참여 분리, 정원 초과 방지, 그룹별 실시간 채팅(참여/이탈 시스템 메시지 포함), My Page 프로필 화면, 물품/분담 UI(품목 입력·담당)
-- 진행중: 푸시 알림(FCM) — 외부 인프라(APNs/Cloud Functions) 설정이 남아 있음, [PHASE6_FCM_HANDOFF.md](PHASE6_FCM_HANDOFF.md) 참고
+- 진행중: 푸시 알림(FCM) — 클라이언트·Cloud Function 코드 작성 완료, 외부 인프라(APNs 키, Blaze 플랜, `firebase deploy`)만 남음. [PHASE6_FCM_HANDOFF.md](PHASE6_FCM_HANDOFF.md) 참고
 - 시작전: 없음
 
 ---
@@ -315,4 +315,6 @@ KAIST 학생만 사용하도록 `@kaist.ac.kr` 이메일 인증 기반 회원가
 
 ### 7.3 푸시 알림(FCM)
 
-> **중요도**: 🟡 중간 | **진행 상태**: ⚪ 시작전 — [PHASE6_FCM_HANDOFF.md](PHASE6_FCM_HANDOFF.md) 참고
+> **중요도**: 🟡 중간 | **진행 상태**: 🟡 진행중 (코드 완료, 외부 인프라 배포 대기) — [PHASE6_FCM_HANDOFF.md](PHASE6_FCM_HANDOFF.md) 참고
+
+`lib/messaging_service.dart`가 로그인 직후 알림 권한을 요청하고 FCM 토큰을 `users/{uid}.fcmTokens` 배열에 저장한다. `functions/src/index.ts`의 `onChatMessage` 트리거가 새 사용자 메시지마다 같은 그룹 다른 멤버들의 토큰으로 푸시를 발송하고, 발송 실패 시 무효 토큰을 자동 정리한다. APNs 키 업로드·Blaze 플랜·Cloud Functions 배포가 끝나야 실제 알림이 전송된다.
