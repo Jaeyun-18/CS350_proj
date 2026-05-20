@@ -6,6 +6,7 @@ class _HomeTab extends StatelessWidget {
     required this.displayName,
     required this.preferredLocation,
     required this.emailVerified,
+    required this.photoUrl,
     required this.openGroups,
     required this.onCreateGroup,
     required this.onEditPreferredLocation,
@@ -19,6 +20,7 @@ class _HomeTab extends StatelessWidget {
   final String displayName;
   final String? preferredLocation;
   final bool emailVerified;
+  final String? photoUrl;
   final List<_GroupEntry> openGroups;
   final VoidCallback onCreateGroup;
   final Future<void> Function(String? currentValue) onEditPreferredLocation;
@@ -85,7 +87,7 @@ class _HomeTab extends StatelessWidget {
               const SizedBox(width: 12),
               _NotificationButton(count: 3),
               const SizedBox(width: 10),
-              _AvatarBadge(letter: initial),
+              _AvatarBadge(letter: initial, photoUrl: photoUrl),
             ],
           ),
           const SizedBox(height: 18),
@@ -341,7 +343,9 @@ class _MyPageTab extends StatelessWidget {
     required this.email,
     required this.preferredLocation,
     required this.emailVerified,
+    required this.photoUrl,
     required this.onEditPreferredLocation,
+    required this.onEditProfile,
     required this.onLogout,
   });
 
@@ -349,7 +353,9 @@ class _MyPageTab extends StatelessWidget {
   final String email;
   final String? preferredLocation;
   final bool emailVerified;
+  final String? photoUrl;
   final Future<void> Function(String? currentValue) onEditPreferredLocation;
+  final VoidCallback onEditProfile;
   final VoidCallback onLogout;
 
   @override
@@ -376,24 +382,7 @@ class _MyPageTab extends StatelessWidget {
             ),
             child: Row(
               children: [
-                Container(
-                  width: 64,
-                  height: 64,
-                  decoration: BoxDecoration(
-                    gradient: _MainVisuals.primaryGradient,
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: Center(
-                    child: Text(
-                      initial,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.w900,
-                        fontSize: 26,
-                      ),
-                    ),
-                  ),
-                ),
+                _ProfileAvatar(initial: initial, photoUrl: photoUrl),
                 const SizedBox(width: 16),
                 Expanded(
                   child: Column(
@@ -418,6 +407,23 @@ class _MyPageTab extends StatelessWidget {
                         ),
                       ),
                     ],
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Material(
+                  color: Colors.white.withValues(alpha: 0.14),
+                  borderRadius: BorderRadius.circular(14),
+                  child: InkWell(
+                    borderRadius: BorderRadius.circular(14),
+                    onTap: onEditProfile,
+                    child: const Padding(
+                      padding: EdgeInsets.all(10),
+                      child: Icon(
+                        Icons.edit_rounded,
+                        color: Colors.white,
+                        size: 18,
+                      ),
+                    ),
                   ),
                 ),
               ],
@@ -498,7 +504,23 @@ class _MyPageTab extends StatelessWidget {
               ),
             ),
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 16),
+          OutlinedButton.icon(
+            onPressed: onEditProfile,
+            icon: const Icon(Icons.manage_accounts_outlined),
+            label: const Text('Edit profile'),
+            style: OutlinedButton.styleFrom(
+              minimumSize: const Size.fromHeight(56),
+              foregroundColor: _MainVisuals.green,
+              side: const BorderSide(color: Color(0xFFD1FAE5)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(18),
+              ),
+              backgroundColor: _MainVisuals.softMint,
+              textStyle: const TextStyle(fontWeight: FontWeight.w800),
+            ),
+          ),
+          const SizedBox(height: 12),
           OutlinedButton.icon(
             onPressed: onLogout,
             icon: const Icon(Icons.logout_rounded),
@@ -971,6 +993,42 @@ class _StatsChip extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+class _ProfileAvatar extends StatelessWidget {
+  const _ProfileAvatar({required this.initial, required this.photoUrl});
+
+  final String initial;
+  final String? photoUrl;
+
+  @override
+  Widget build(BuildContext context) {
+    final url = photoUrl;
+    final hasPhoto = url != null && url.isNotEmpty;
+    return Container(
+      width: 64,
+      height: 64,
+      decoration: BoxDecoration(
+        gradient: hasPhoto ? null : _MainVisuals.primaryGradient,
+        borderRadius: BorderRadius.circular(20),
+        image: hasPhoto
+            ? DecorationImage(image: NetworkImage(url), fit: BoxFit.cover)
+            : null,
+      ),
+      child: hasPhoto
+          ? null
+          : Center(
+              child: Text(
+                initial,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w900,
+                  fontSize: 26,
+                ),
+              ),
+            ),
     );
   }
 }

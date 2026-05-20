@@ -314,6 +314,81 @@ class AuthService {
     }, SetOptions(merge: true));
   }
 
+  Future<void> updatePhotoUrl({
+    required String uid,
+    required String? photoUrl,
+  }) async {
+    await profileRef(uid).set({
+      'photoURL': (photoUrl == null || photoUrl.isEmpty) ? null : photoUrl,
+      'updatedAt': FieldValue.serverTimestamp(),
+    }, SetOptions(merge: true));
+  }
+
+  Future<void> updateDisplayName({
+    required String uid,
+    required String currentDisplayName,
+    required String newDisplayName,
+  }) async {
+    final trimmedNew = newDisplayName.trim();
+    final validation = validateNickname(trimmedNew);
+    if (validation != null) {
+      throw FirebaseAuthException(
+        code: 'invalid-display-name',
+        message: validation,
+      );
+    }
+
+    final newLower = _normalizeDisplayName(trimmedNew);
+    final currentTrimmed = currentDisplayName.trim();
+    final currentLower = _normalizeDisplayName(currentTrimmed);
+    if (newLower == currentLower) {
+      // 동일 닉네임으로의 변경은 표시 이름 대소문자만 갱신한다.
+      await profileRef(uid).set({
+        'displayName': trimmedNew,
+        'displayNameLower': newLower,
+        'updatedAt': FieldValue.serverTimestamp(),
+      }, SetOptions(merge: true));
+      return;
+    }
+
+    await FirebaseFirestore.instance.runTransaction((transaction) async {
+      final newLockRef = _displayNameLockRef(trimmedNew);
+      final newLockSnapshot = await transaction.get(newLockRef);
+      if (newLockSnapshot.exists) {
+        final ownerUid = newLockSnapshot.data()?['uid']?.toString();
+        if (ownerUid != uid) {
+          throw FirebaseAuthException(
+            code: 'nickname-taken',
+            message: 'This nickname is already taken.',
+          );
+        }
+      }
+
+      transaction.set(newLockRef, {
+        'kind': 'display_name_lock',
+        'displayName': trimmedNew,
+        'displayNameLower': newLower,
+        'uid': uid,
+        'claimedAt': FieldValue.serverTimestamp(),
+      });
+
+      if (currentTrimmed.isNotEmpty) {
+        final oldLockRef = _displayNameLockRef(currentTrimmed);
+        final oldLockSnapshot = await transaction.get(oldLockRef);
+        if (oldLockSnapshot.exists &&
+            oldLockSnapshot.data()?['uid']?.toString() == uid) {
+          transaction.delete(oldLockRef);
+        }
+      }
+
+      transaction.set(profileRef(uid), {
+        'displayName': trimmedNew,
+        'displayNameLower': newLower,
+        'updatedAt': FieldValue.serverTimestamp(),
+      }, SetOptions(merge: true));
+    });
+  }
+
   Future<void> markEmailVerified(User user) async {
     await profileRef(user.uid).set({
       'emailVerified': user.emailVerified,

@@ -13,6 +13,7 @@ import 'group_items.dart';
 import 'group_items_editor.dart';
 import 'groupcreate.dart' as groupcreate;
 import 'messaging_service.dart';
+import 'profile_edit_page.dart';
 
 part 'main_page_tabs.dart';
 part 'group_page.dart';
@@ -150,6 +151,21 @@ class _MainPageState extends State<MainPage> {
         _selectedIndex = 1;
       });
     }
+  }
+
+  Future<void> _openProfileEdit({
+    required String displayName,
+    required String? photoUrl,
+  }) async {
+    await Navigator.of(context).push<bool>(
+      MaterialPageRoute(
+        builder: (context) => ProfileEditPage(
+          uid: widget.user.uid,
+          currentDisplayName: displayName,
+          currentPhotoUrl: photoUrl,
+        ),
+      ),
+    );
   }
 
   void _openChat(_GroupEntry group) {
@@ -340,6 +356,10 @@ class _MainPageState extends State<MainPage> {
                 (preferredLocationValue?.isNotEmpty ?? false)
                 ? preferredLocationValue
                 : null;
+            final photoUrlValue = data?['photoURL']?.toString().trim();
+            final photoUrl = (photoUrlValue?.isNotEmpty ?? false)
+                ? photoUrlValue
+                : null;
             final emailVerified =
                 data?['emailVerified'] == true || widget.user.emailVerified;
             return StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
@@ -388,6 +408,7 @@ class _MainPageState extends State<MainPage> {
                   displayName: displayName,
                   preferredLocation: preferredLocation,
                   emailVerified: emailVerified,
+                  photoUrl: photoUrl,
                   openGroups: openGroupEntries,
                   onCreateGroup: _openCreateGroup,
                   onEditPreferredLocation: _editPreferredLocation,
@@ -411,7 +432,12 @@ class _MainPageState extends State<MainPage> {
                   email: widget.user.email ?? 'No email',
                   preferredLocation: preferredLocation,
                   emailVerified: emailVerified,
+                  photoUrl: photoUrl,
                   onEditPreferredLocation: _editPreferredLocation,
+                  onEditProfile: () => _openProfileEdit(
+                    displayName: displayName,
+                    photoUrl: photoUrl,
+                  ),
                   onLogout: _confirmLogout,
                 );
 
@@ -732,28 +758,36 @@ class _NotificationButton extends StatelessWidget {
 }
 
 class _AvatarBadge extends StatelessWidget {
-  const _AvatarBadge({required this.letter});
+  const _AvatarBadge({required this.letter, this.photoUrl});
 
   final String letter;
+  final String? photoUrl;
 
   @override
   Widget build(BuildContext context) {
+    final url = photoUrl;
+    final hasPhoto = url != null && url.isNotEmpty;
     return Container(
       width: 40,
       height: 40,
       decoration: BoxDecoration(
-        gradient: _MainVisuals.primaryGradient,
+        gradient: hasPhoto ? null : _MainVisuals.primaryGradient,
         borderRadius: BorderRadius.circular(14),
+        image: hasPhoto
+            ? DecorationImage(image: NetworkImage(url), fit: BoxFit.cover)
+            : null,
       ),
-      child: Center(
-        child: Text(
-          letter,
-          style: const TextStyle(
-            color: Colors.white,
-            fontWeight: FontWeight.w800,
-          ),
-        ),
-      ),
+      child: hasPhoto
+          ? null
+          : Center(
+              child: Text(
+                letter,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+            ),
     );
   }
 }
