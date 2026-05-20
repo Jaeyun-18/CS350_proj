@@ -16,9 +16,7 @@ void main() {
   ) async {
     await tester.pumpWidget(
       const MyApp(
-        homeOverride: Scaffold(
-          body: Center(child: Text('hello')),
-        ),
+        homeOverride: Scaffold(body: Center(child: Text('hello'))),
       ),
     );
 

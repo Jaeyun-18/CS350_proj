@@ -42,7 +42,7 @@ class GroupItemsEditor extends StatelessWidget {
           const Padding(
             padding: EdgeInsets.symmetric(vertical: 8),
             child: Text(
-              '아직 등록한 품목이 없어요. 함께 살 품목을 추가해보세요.',
+              'No items yet. Add what you want to buy together.',
               style: TextStyle(color: _editorMuted, fontSize: 13),
             ),
           )
@@ -56,7 +56,7 @@ class GroupItemsEditor extends StatelessWidget {
         OutlinedButton.icon(
           onPressed: () => _addItem(context),
           icon: const Icon(Icons.add_rounded, size: 18),
-          label: const Text('품목 추가'),
+          label: const Text('Add item'),
           style: OutlinedButton.styleFrom(
             minimumSize: const Size.fromHeight(48),
             foregroundColor: _editorGreen,
@@ -102,7 +102,7 @@ class _ItemRow extends StatelessWidget {
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  '${item.category} · ${item.quantity}개',
+                  '${item.category} · qty ${item.quantity}',
                   style: const TextStyle(color: _editorMuted, fontSize: 12),
                 ),
               ],
@@ -112,7 +112,7 @@ class _ItemRow extends StatelessWidget {
             onPressed: onRemove,
             icon: const Icon(Icons.close_rounded, size: 18),
             color: _editorMuted,
-            tooltip: '품목 삭제',
+            tooltip: 'Remove item',
           ),
         ],
       ),
@@ -150,7 +150,7 @@ class _ItemDialogState extends State<_ItemDialog> {
   void _submit() {
     final name = _nameController.text.trim();
     if (name.isEmpty) {
-      setState(() => _error = '품목 이름을 입력해주세요.');
+      setState(() => _error = 'Please enter an item name.');
       return;
     }
     Navigator.of(context).pop(
@@ -166,7 +166,7 @@ class _ItemDialogState extends State<_ItemDialog> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: const Text('품목 추가'),
+      title: const Text('Add item'),
       content: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -174,8 +174,8 @@ class _ItemDialogState extends State<_ItemDialog> {
             controller: _nameController,
             autofocus: true,
             decoration: InputDecoration(
-              labelText: '품목 이름',
-              hintText: '예: 생수 2L 6병',
+              labelText: 'Item name',
+              hintText: 'e.g. 6-pack 2L water',
               errorText: _error,
             ),
             onChanged: (_) {
@@ -187,7 +187,7 @@ class _ItemDialogState extends State<_ItemDialog> {
           const SizedBox(height: 12),
           DropdownButtonFormField<String>(
             initialValue: _category,
-            decoration: const InputDecoration(labelText: '카테고리'),
+            decoration: const InputDecoration(labelText: 'Category'),
             items: kItemCategories
                 .map(
                   (category) =>
@@ -203,7 +203,7 @@ class _ItemDialogState extends State<_ItemDialog> {
           const SizedBox(height: 12),
           Row(
             children: [
-              const Text('수량'),
+              const Text('Quantity'),
               const Spacer(),
               IconButton(
                 onPressed: _quantity <= 1
@@ -231,9 +231,9 @@ class _ItemDialogState extends State<_ItemDialog> {
       actions: [
         TextButton(
           onPressed: () => Navigator.of(context).pop(),
-          child: const Text('취소'),
+          child: const Text('Cancel'),
         ),
-        FilledButton(onPressed: _submit, child: const Text('추가')),
+        FilledButton(onPressed: _submit, child: const Text('Add')),
       ],
     );
   }

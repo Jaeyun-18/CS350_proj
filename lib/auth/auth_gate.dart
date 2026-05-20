@@ -21,7 +21,7 @@ class AuthGate extends StatelessWidget {
         if (snapshot.connectionState == ConnectionState.waiting &&
             snapshot.data == null) {
           return const _AuthLoadingScaffold(
-            message: '인증 상태를 불러오는 중...',
+            message: 'Checking authentication...',
           );
         }
 
@@ -31,9 +31,7 @@ class AuthGate extends StatelessWidget {
         }
 
         if (!AuthService.instance.isKaistEmail(user.email ?? '')) {
-          return _RestrictedAccountView(
-            email: user.email ?? '알 수 없는 이메일',
-          );
+          return _RestrictedAccountView(email: user.email ?? 'Unknown email');
         }
 
         if (!user.emailVerified) {
@@ -153,13 +151,13 @@ class _RestrictedAccountView extends StatelessWidget {
                         const Icon(Icons.lock_outline, size: 56),
                         const SizedBox(height: 16),
                         Text(
-                          '허용되지 않은 계정이에요',
+                          'Account not allowed',
                           textAlign: TextAlign.center,
                           style: Theme.of(context).textTheme.headlineSmall,
                         ),
                         const SizedBox(height: 12),
                         Text(
-                          '이 앱은 @kaist.ac.kr 계정만 사용할 수 있어요.\n\n현재 계정: $email',
+                          'Only @kaist.ac.kr accounts can use this app.\n\nCurrent account: $email',
                           textAlign: TextAlign.center,
                         ),
                         const SizedBox(height: 24),
@@ -167,7 +165,7 @@ class _RestrictedAccountView extends StatelessWidget {
                           onPressed: () async {
                             await AuthService.instance.signOut();
                           },
-                          child: const Text('로그아웃'),
+                          child: const Text('Log Out'),
                         ),
                       ],
                     ),

@@ -122,16 +122,18 @@ class _GroupPageState extends State<_GroupPage> {
       context: context,
       builder: (context) {
         return AlertDialog(
-          title: const Text('그룹에서 나가시겠어요?'),
-          content: const Text('나가면 다시 홈에서 해당 그룹을 찾아야 해요.'),
+          title: const Text('Leave the group?'),
+          content: const Text(
+            'If you leave, you will need to find this group from Home again.',
+          ),
           actions: [
             TextButton(
               onPressed: () => Navigator.of(context).pop(false),
-              child: const Text('취소'),
+              child: const Text('Cancel'),
             ),
             FilledButton(
               onPressed: () => Navigator.of(context).pop(true),
-              child: const Text('나가기'),
+              child: const Text('Leave'),
             ),
           ],
         );
@@ -159,7 +161,7 @@ class _GroupPageState extends State<_GroupPage> {
         if (!snapshot.exists) {
           throw FirebaseException(
             plugin: 'cloud_firestore',
-            message: '그룹을 찾을 수 없어요.',
+            message: 'Group not found.',
           );
         }
 
@@ -173,7 +175,7 @@ class _GroupPageState extends State<_GroupPage> {
         if (!currentGroup.isMember) {
           throw FirebaseException(
             plugin: 'cloud_firestore',
-            message: '이미 그룹에서 나간 상태예요.',
+            message: 'You have already left this group.',
           );
         }
 
@@ -194,7 +196,7 @@ class _GroupPageState extends State<_GroupPage> {
       }
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(SnackBar(content: Text('그룹 나가기 실패: $error')));
+      ).showSnackBar(SnackBar(content: Text('Leave failed: $error')));
     }
   }
 
@@ -262,16 +264,16 @@ class _GroupPageState extends State<_GroupPage> {
       if (!mounted) {
         return;
       }
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('담당 변경 실패: ${error.message}')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Claim update failed: ${error.message}')),
+      );
     }
   }
 
   @override
   Widget build(BuildContext context) {
     final dateText = _group.dateTime == null
-        ? '날짜 정보 없음'
+        ? 'No date set'
         : _formatGroupDateTime(_group.dateTime!);
     final memberCountText = '${_group.nowNum} / ${_group.maxNum} members';
 
@@ -296,7 +298,7 @@ class _GroupPageState extends State<_GroupPage> {
             IconButton(
               onPressed: _openSettings,
               icon: const Icon(Icons.settings_outlined),
-              tooltip: '그룹 설정',
+              tooltip: 'Group settings',
             ),
         ],
       ),
@@ -321,32 +323,32 @@ class _GroupPageState extends State<_GroupPage> {
                   children: [
                     _DetailRow(
                       icon: Icons.location_on_outlined,
-                      label: '장보기 장소',
+                      label: 'Shopping location',
                       value: _group.location,
                     ),
                     const SizedBox(height: 12),
                     _DetailRow(
                       icon: Icons.calendar_month_rounded,
-                      label: '일정',
+                      label: 'Schedule',
                       value: dateText,
                     ),
                     const SizedBox(height: 12),
                     _DetailRow(
                       icon: Icons.people_outline_rounded,
-                      label: '정원',
+                      label: 'Capacity',
                       value: memberCountText,
                     ),
                     const SizedBox(height: 12),
                     _DetailRow(
                       icon: Icons.badge_outlined,
-                      label: '내 상태',
+                      label: 'My status',
                       value: _isOwner
-                          ? '호스트'
+                          ? 'Host'
                           : _isMember
-                          ? '참여 중'
+                          ? 'Joined'
                           : _isEnded
-                          ? '종료됨'
-                          : '참여 전',
+                          ? 'Ended'
+                          : 'Not joined',
                     ),
                   ],
                 ),
@@ -358,7 +360,7 @@ class _GroupPageState extends State<_GroupPage> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      '현재 참여 인원과 남은 자리를 확인할 수 있어요.',
+                      'Check current members and remaining seats.',
                       style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                         color: _MainVisuals.mutedText,
                       ),
@@ -368,14 +370,14 @@ class _GroupPageState extends State<_GroupPage> {
                       children: [
                         Expanded(
                           child: _StatTile(
-                            label: '현재 인원',
+                            label: 'Current',
                             value: '${_group.nowNum}',
                           ),
                         ),
                         const SizedBox(width: 12),
                         Expanded(
                           child: _StatTile(
-                            label: '남은 자리',
+                            label: 'Remaining',
                             value: '${_group.remainingSlots}',
                           ),
                         ),
@@ -400,12 +402,12 @@ class _GroupPageState extends State<_GroupPage> {
                 title: 'NEXT STEP',
                 child: Text(
                   _isEnded
-                      ? '이 그룹은 종료되었어요. 뒤로 돌아가 다른 그룹을 확인해보세요.'
+                      ? 'This group has ended. Go back to find another group.'
                       : _isOwner
-                      ? '호스트는 상단 설정에서 그룹 수정과 종료를 관리할 수 있어요.'
+                      ? 'As host, use the settings icon to edit or end the group.'
                       : _isMember
-                      ? '참여 중 상태에서는 채팅 입장과 그룹 나가기 액션을 사용할 수 있어요.'
-                      : '참여 전 상태에서는 그룹 참여 버튼이 아래에 표시돼요.',
+                      ? 'You can open chat or leave the group from the actions below.'
+                      : 'A Join button appears below when you are not yet a member.',
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                     color: _MainVisuals.mutedText,
                   ),
@@ -428,7 +430,7 @@ class _GroupPageState extends State<_GroupPage> {
   Widget _buildActionBar(BuildContext context) {
     if (_isEnded) {
       return _ActionButton(
-        label: '뒤로',
+        label: 'Back',
         icon: Icons.arrow_back_rounded,
         filled: true,
         onPressed: () => Navigator.of(context).maybePop(),
@@ -437,7 +439,7 @@ class _GroupPageState extends State<_GroupPage> {
 
     if (_isOwner) {
       return _ActionButton(
-        label: '채팅',
+        label: 'Chat',
         icon: Icons.chat_bubble_outline_rounded,
         filled: true,
         onPressed: _openChat,
@@ -449,7 +451,7 @@ class _GroupPageState extends State<_GroupPage> {
         children: [
           Expanded(
             child: _ActionButton(
-              label: '채팅',
+              label: 'Chat',
               icon: Icons.chat_bubble_outline_rounded,
               filled: true,
               onPressed: _openChat,
@@ -458,7 +460,7 @@ class _GroupPageState extends State<_GroupPage> {
           const SizedBox(width: 12),
           Expanded(
             child: _ActionButton(
-              label: '그룹 나가기',
+              label: 'Leave group',
               icon: Icons.exit_to_app_rounded,
               filled: false,
               onPressed: _handleLeave,
@@ -473,12 +475,12 @@ class _GroupPageState extends State<_GroupPage> {
         Expanded(
           child: _ActionButton(
             label: _isSubmitting
-                ? '참여 중...'
+                ? 'Joining...'
                 : _isRecruitmentClosed
-                ? '모집 종료'
+                ? 'Recruitment closed'
                 : _group.isFull
-                ? '정원이 꽉 찼어요'
-                : '그룹 참여',
+                ? 'Group is full'
+                : 'Join group',
             icon: Icons.how_to_reg_rounded,
             filled: true,
             enabled: _isJoinable && !_isSubmitting,
@@ -488,7 +490,7 @@ class _GroupPageState extends State<_GroupPage> {
         const SizedBox(width: 12),
         Expanded(
           child: _ActionButton(
-            label: '뒤로',
+            label: 'Back',
             icon: Icons.arrow_back_rounded,
             filled: false,
             onPressed: () => Navigator.of(context).maybePop(),
@@ -590,7 +592,7 @@ class _GroupHeroCard extends StatelessWidget {
               Expanded(
                 child: _HeroMetric(
                   icon: Icons.calendar_today_outlined,
-                  label: '일정',
+                  label: 'Schedule',
                   value: dateText,
                 ),
               ),
@@ -598,7 +600,7 @@ class _GroupHeroCard extends StatelessWidget {
               Expanded(
                 child: _HeroMetric(
                   icon: Icons.people_outline_rounded,
-                  label: '멤버',
+                  label: 'Members',
                   value: memberCountText,
                 ),
               ),
@@ -858,7 +860,7 @@ class _GroupItemsView extends StatelessWidget {
   Widget build(BuildContext context) {
     if (items.isEmpty) {
       return Text(
-        '아직 등록된 품목이 없어요. 호스트가 그룹 설정에서 추가할 수 있어요.',
+        'No items yet. The host can add items in group settings.',
         style: Theme.of(
           context,
         ).textTheme.bodyMedium?.copyWith(color: _MainVisuals.mutedText),
@@ -870,7 +872,7 @@ class _GroupItemsView extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          '품목 ${items.length}개 · 담당 완료 $claimedCount개',
+          '${items.length} items · $claimedCount claimed',
           style: Theme.of(
             context,
           ).textTheme.bodySmall?.copyWith(color: _MainVisuals.mutedText),
@@ -927,7 +929,7 @@ class _GroupItemTile extends StatelessWidget {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  '${item.category} · ${item.quantity}개',
+                  '${item.category} · qty ${item.quantity}',
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
                     color: _MainVisuals.mutedText,
                   ),
@@ -947,7 +949,7 @@ class _GroupItemTile extends StatelessWidget {
       return TextButton.icon(
         onPressed: canClaim ? onToggle : null,
         icon: const Icon(Icons.check_circle_rounded, size: 16),
-        label: const Text('내가 담당'),
+        label: const Text('Mine'),
         style: TextButton.styleFrom(
           foregroundColor: _MainVisuals.green,
           backgroundColor: _MainVisuals.softMint,
@@ -967,7 +969,7 @@ class _GroupItemTile extends StatelessWidget {
           borderRadius: BorderRadius.circular(12),
         ),
         child: const Text(
-          '담당 완료',
+          'Claimed',
           style: TextStyle(
             color: _MainVisuals.mutedText,
             fontWeight: FontWeight.w700,
@@ -979,7 +981,7 @@ class _GroupItemTile extends StatelessWidget {
 
     if (!canClaim) {
       return const Text(
-        '미정',
+        'Open',
         style: TextStyle(
           color: _MainVisuals.subtleText,
           fontWeight: FontWeight.w700,
@@ -995,7 +997,7 @@ class _GroupItemTile extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       ),
-      child: const Text('담당하기'),
+      child: const Text('Claim'),
     );
   }
 }

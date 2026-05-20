@@ -74,7 +74,7 @@ class _HomeTab extends StatelessWidget {
                     ),
                     const SizedBox(height: 6),
                     Text(
-                      '안녕하세요, $displayName',
+                      'Hello, $displayName',
                       style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                         color: _MainVisuals.mutedText,
                       ),
@@ -116,7 +116,7 @@ class _HomeTab extends StatelessWidget {
                         const SizedBox(width: 10),
                         Expanded(
                           child: Text(
-                            preferredLocation ?? '선호 위치 미설정',
+                            preferredLocation ?? 'Set preferred location',
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                             style: Theme.of(context).textTheme.bodyMedium
@@ -276,7 +276,7 @@ class _HomeTab extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   const Text(
-                    '등록된 그룹이 없습니다.',
+                    'No groups available.',
                     style: TextStyle(
                       fontSize: 15,
                       fontWeight: FontWeight.w700,
@@ -285,7 +285,7 @@ class _HomeTab extends StatelessWidget {
                   ),
                   const SizedBox(height: 6),
                   Text(
-                    '참여 가능한 그룹이 없어요. Create a Group 버튼으로 새 그룹을 만들어보세요.',
+                    'There are no joinable groups. Tap Create a Group to start one.',
                     style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                       color: _MainVisuals.mutedText,
                     ),
@@ -322,7 +322,7 @@ class _HomeTab extends StatelessWidget {
           ],
           const SizedBox(height: 6),
           Text(
-            emailVerified ? '이메일 인증 완료' : '이메일 인증 대기',
+            emailVerified ? 'Email verified' : 'Email verification pending',
             style: Theme.of(context).textTheme.bodySmall?.copyWith(
               color: emailVerified
                   ? _MainVisuals.green
@@ -430,7 +430,7 @@ class _MyPageTab extends StatelessWidget {
               children: [
                 _DetailRow(
                   icon: Icons.mail_outline_rounded,
-                  label: '이메일',
+                  label: 'Email',
                   value: email,
                 ),
                 const SizedBox(height: 12),
@@ -438,8 +438,8 @@ class _MyPageTab extends StatelessWidget {
                   icon: emailVerified
                       ? Icons.verified_rounded
                       : Icons.schedule_rounded,
-                  label: '이메일 인증',
-                  value: emailVerified ? '인증 완료' : '인증 대기 중',
+                  label: 'Email verification',
+                  value: emailVerified ? 'Verified' : 'Pending',
                 ),
               ],
             ),
@@ -471,7 +471,7 @@ class _MyPageTab extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          '선호 위치',
+                          'Preferred location',
                           style: Theme.of(context).textTheme.labelMedium
                               ?.copyWith(
                                 color: _MainVisuals.mutedText,
@@ -480,7 +480,7 @@ class _MyPageTab extends StatelessWidget {
                         ),
                         const SizedBox(height: 4),
                         Text(
-                          preferredLocation ?? '미설정',
+                          preferredLocation ?? 'Not set',
                           style: Theme.of(context).textTheme.bodyMedium
                               ?.copyWith(
                                 color: _MainVisuals.text,
@@ -502,7 +502,7 @@ class _MyPageTab extends StatelessWidget {
           OutlinedButton.icon(
             onPressed: onLogout,
             icon: const Icon(Icons.logout_rounded),
-            label: const Text('로그아웃'),
+            label: const Text('Log Out'),
             style: OutlinedButton.styleFrom(
               minimumSize: const Size.fromHeight(56),
               foregroundColor: const Color(0xFFDC2626),

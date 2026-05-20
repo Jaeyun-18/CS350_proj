@@ -24,7 +24,7 @@ class ChatMessage {
       id: snapshot.id,
       text: data['text']?.toString() ?? '',
       senderId: data['senderId']?.toString() ?? '',
-      senderName: data['senderName']?.toString() ?? '학생',
+      senderName: data['senderName']?.toString() ?? 'Student',
       createdAt: rawCreatedAt is Timestamp ? rawCreatedAt.toDate() : null,
       type: data['type']?.toString() == 'system' ? 'system' : 'user',
     );
@@ -124,7 +124,7 @@ class FirestoreChatService implements ChatService {
     required bool joined,
   }) async {
     final name = await _resolveDisplayName(uid);
-    final text = joined ? '$name님이 참여했어요.' : '$name님이 그룹에서 나갔어요.';
+    final text = joined ? '$name joined the group.' : '$name left the group.';
     await _messagesRef(groupId).add({
       'text': text,
       'senderId': uid,
@@ -143,7 +143,7 @@ class FirestoreChatService implements ChatService {
     final snapshot = await AuthService.instance.profileRef(uid).get();
     final displayName = snapshot.data()?['displayName']?.toString().trim();
     final resolved = (displayName == null || displayName.isEmpty)
-        ? '학생'
+        ? 'Student'
         : displayName;
     _displayNameCache[uid] = resolved;
     return resolved;

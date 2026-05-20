@@ -71,9 +71,9 @@ class _ChatPageState extends State<ChatPage> {
       _controller.clear();
     } on Exception catch (error) {
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('메시지 전송 실패: $error')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to send message: $error')),
+        );
       }
     } finally {
       if (mounted) {
@@ -107,7 +107,7 @@ class _ChatPageState extends State<ChatPage> {
                 stream: _service.watchMessages(widget.groupId),
                 builder: (context, snapshot) {
                   if (snapshot.hasError) {
-                    return const _ChatNotice(text: '메시지를 불러오지 못했어요.');
+                    return const _ChatNotice(text: 'Failed to load messages.');
                   }
                   if (!snapshot.hasData) {
                     return const Center(child: CircularProgressIndicator());
@@ -116,7 +116,7 @@ class _ChatPageState extends State<ChatPage> {
                   final messages = snapshot.data!;
                   if (messages.isEmpty) {
                     return const _ChatNotice(
-                      text: '아직 메시지가 없어요.\n첫 메시지를 보내보세요.',
+                      text: 'No messages yet.\nSend the first one.',
                     );
                   }
 

@@ -7,15 +7,16 @@ class AuthService {
   static final AuthService instance = AuthService._();
 
   static const List<String> preferredLocations = <String>[
-    '나중에 선택',
+    'Choose later',
     'Homeplus Yusung',
     'Traders Wolpyeong',
     'KAIST Area',
   ];
 
   final FirebaseAuth _auth = FirebaseAuth.instance;
-  final CollectionReference<Map<String, dynamic>> _users =
-      FirebaseFirestore.instance.collection('users');
+  final CollectionReference<Map<String, dynamic>> _users = FirebaseFirestore
+      .instance
+      .collection('users');
 
   String _normalizeEmail(String value) => value.trim().toLowerCase();
 
@@ -27,10 +28,10 @@ class AuthService {
   String? validateEmail(String? value) {
     final email = value?.trim() ?? '';
     if (email.isEmpty) {
-      return '이메일을 입력해주세요.';
+      return 'Please enter your email.';
     }
     if (!isKaistEmail(email)) {
-      return 'KAIST 이메일(@kaist.ac.kr)만 사용할 수 있어요.';
+      return 'Only KAIST email (@kaist.ac.kr) is allowed.';
     }
     return null;
   }
@@ -38,13 +39,13 @@ class AuthService {
   String? validateNickname(String? value) {
     final nickname = value?.trim() ?? '';
     if (nickname.isEmpty) {
-      return '닉네임을 입력해주세요.';
+      return 'Please enter a nickname.';
     }
     if (nickname.length < 2) {
-      return '닉네임은 2자 이상이어야 해요.';
+      return 'Nickname must be at least 2 characters.';
     }
     if (nickname.length > 20) {
-      return '닉네임은 20자 이하로 입력해주세요.';
+      return 'Nickname must be 20 characters or fewer.';
     }
     return null;
   }
@@ -82,20 +83,20 @@ class AuthService {
   String? validatePassword(String? value) {
     final password = value ?? '';
     if (password.isEmpty) {
-      return '비밀번호를 입력해주세요.';
+      return 'Please enter your password.';
     }
     if (password.length < 8) {
-      return '비밀번호는 8자 이상이어야 해요.';
+      return 'Password must be at least 8 characters.';
     }
     return null;
   }
 
   String? validatePasswordConfirmation(String? value, String password) {
     if ((value ?? '').isEmpty) {
-      return '비밀번호를 다시 입력해주세요.';
+      return 'Please confirm your password.';
     }
     if (value != password) {
-      return '비밀번호가 일치하지 않아요.';
+      return 'Passwords do not match.';
     }
     return null;
   }
@@ -118,14 +119,14 @@ class AuthService {
     if (!isKaistEmail(normalizedEmail)) {
       throw FirebaseAuthException(
         code: 'invalid-email-domain',
-        message: 'KAIST 이메일만 사용할 수 있어요.',
+        message: 'Only KAIST email is allowed.',
       );
     }
 
     if (!await isDisplayNameAvailable(trimmedDisplayName)) {
       throw FirebaseAuthException(
         code: 'nickname-taken',
-        message: '이미 사용 중인 닉네임이에요.',
+        message: 'This nickname is already taken.',
       );
     }
 
@@ -137,7 +138,7 @@ class AuthService {
     if (user == null) {
       throw FirebaseAuthException(
         code: 'user-null',
-        message: '사용자 생성에 실패했습니다.',
+        message: 'Failed to create user.',
       );
     }
 
@@ -148,7 +149,7 @@ class AuthService {
         if (lockSnapshot.exists) {
           throw FirebaseAuthException(
             code: 'nickname-taken',
-            message: '이미 사용 중인 닉네임이에요.',
+            message: 'This nickname is already taken.',
           );
         }
 
@@ -198,7 +199,7 @@ class AuthService {
     if (!isKaistEmail(normalizedEmail)) {
       throw FirebaseAuthException(
         code: 'invalid-email-domain',
-        message: 'KAIST 이메일만 로그인할 수 있어요.',
+        message: 'Only KAIST email can sign in.',
       );
     }
 
@@ -213,7 +214,7 @@ class AuthService {
     if (!isKaistEmail(normalizedEmail)) {
       throw FirebaseAuthException(
         code: 'invalid-email-domain',
-        message: 'KAIST 이메일만 사용할 수 있어요.',
+        message: 'Only KAIST email is allowed.',
       );
     }
 
@@ -239,19 +240,21 @@ class AuthService {
     final existing = snapshot.data();
     final existingDisplayName = existing?['displayName']?.toString().trim();
     final legacyNickname = existing?['nickname']?.toString().trim();
-    final existingPreferredLocation =
-        existing?['preferredLocation']?.toString().trim();
+    final existingPreferredLocation = existing?['preferredLocation']
+        ?.toString()
+        .trim();
     final fallbackNickname = user.displayName?.trim();
     final displayName = (existingDisplayName?.isNotEmpty ?? false)
         ? existingDisplayName!
         : (legacyNickname?.isNotEmpty ?? false)
-            ? legacyNickname!
-            : (fallbackNickname?.isNotEmpty ?? false)
-                ? fallbackNickname!
-                : '학생';
+        ? legacyNickname!
+        : (fallbackNickname?.isNotEmpty ?? false)
+        ? fallbackNickname!
+        : 'Student';
     final normalizedDisplayName = _normalizeDisplayName(displayName);
-    final preferredLocation =
-        sanitizePreferredLocation(existingPreferredLocation);
+    final preferredLocation = sanitizePreferredLocation(
+      existingPreferredLocation,
+    );
 
     final payload = <String, dynamic>{
       'uid': user.uid,
@@ -324,28 +327,28 @@ String friendlyAuthMessage(Object error) {
   if (error is FirebaseAuthException) {
     switch (error.code) {
       case 'invalid-email-domain':
-        return error.message ?? 'KAIST 이메일만 사용할 수 있어요.';
+        return error.message ?? 'Only KAIST email is allowed.';
       case 'invalid-display-name':
-        return error.message ?? '닉네임을 입력해주세요.';
+        return error.message ?? 'Please enter a nickname.';
       case 'nickname-taken':
-        return error.message ?? '이미 사용 중인 닉네임이에요.';
+        return error.message ?? 'This nickname is already taken.';
       case 'invalid-email':
-        return '이메일 형식이 올바르지 않아요.';
+        return 'Email format is invalid.';
       case 'email-already-in-use':
-        return '이미 가입된 이메일이에요.';
+        return 'This email is already registered.';
       case 'weak-password':
-        return '비밀번호가 너무 약해요.';
+        return 'Password is too weak.';
       case 'user-not-found':
       case 'wrong-password':
       case 'invalid-credential':
-        return '이메일 또는 비밀번호가 올바르지 않아요.';
+        return 'Email or password is incorrect.';
       case 'too-many-requests':
-        return '잠시 후 다시 시도해주세요.';
+        return 'Too many attempts. Please try again later.';
       case 'network-request-failed':
-        return '네트워크 연결을 확인해주세요.';
+        return 'Please check your network connection.';
       default:
-        return error.message ?? '인증 처리 중 문제가 발생했어요.';
+        return error.message ?? 'Something went wrong during authentication.';
     }
   }
-  return '예상치 못한 오류가 발생했어요.';
+  return 'An unexpected error occurred.';
 }

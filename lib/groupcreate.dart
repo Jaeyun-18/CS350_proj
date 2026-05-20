@@ -98,7 +98,9 @@ class GroupCreateState extends State<GroupCreatePage> {
       if (user == null) {
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('로그인된 사용자가 없습니다. 다시 로그인해주세요.')),
+          const SnackBar(
+            content: Text('No signed-in user. Please sign in again.'),
+          ),
         );
         return;
       }
@@ -110,25 +112,27 @@ class GroupCreateState extends State<GroupCreatePage> {
 
       if (text.isEmpty) {
         if (!mounted) return;
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(const SnackBar(content: Text('group name을 입력해야합니다')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Group name is required.')),
+        );
         return;
       }
 
       if (location == null) {
         if (!mounted) return;
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(const SnackBar(content: Text('location을 선택해야합니다')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Please choose a location.')),
+        );
         return;
       }
 
       if (date == null || time == null) {
         if (!mounted) return;
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(const SnackBar(content: Text('쇼핑 날짜/시간을 선택해야합니다')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Please pick a shopping date and time.'),
+          ),
+        );
         return;
       }
 
@@ -171,7 +175,7 @@ class GroupCreateState extends State<GroupCreatePage> {
       if (!mounted) return;
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(SnackBar(content: Text('저장 실패: $e')));
+      ).showSnackBar(SnackBar(content: Text('Save failed: $e')));
     }
   }
 
@@ -249,7 +253,7 @@ class GroupCreateState extends State<GroupCreatePage> {
                               ),
                               const SizedBox(height: 4),
                               Text(
-                                '함께 장볼 멤버와 일정, 장소를 빠르게 정해보세요.',
+                                'Quickly set members, schedule, and location for your group run.',
                                 style: Theme.of(context).textTheme.bodyMedium
                                     ?.copyWith(color: Colors.white70),
                               ),
@@ -272,7 +276,7 @@ class GroupCreateState extends State<GroupCreatePage> {
                     fontWeight: FontWeight.w600,
                   ),
                   decoration: const InputDecoration(
-                    hintText: '예: Homeplus Yusung Run',
+                    hintText: 'e.g. Homeplus Yusung Run',
                     prefixIcon: Icon(
                       Icons.groups_rounded,
                       color: _CreateVisuals.subtleText,
@@ -288,7 +292,7 @@ class GroupCreateState extends State<GroupCreatePage> {
                   key: _locationFieldKey,
                   initialValue: _selectedLocation,
                   decoration: const InputDecoration(
-                    hintText: '마켓 위치를 선택하세요',
+                    hintText: 'Choose a market location',
                     prefixIcon: Icon(
                       Icons.location_on_outlined,
                       color: _CreateVisuals.subtleText,
@@ -318,7 +322,7 @@ class GroupCreateState extends State<GroupCreatePage> {
                         borderRadius: BorderRadius.circular(18),
                         child: InputDecorator(
                           decoration: const InputDecoration(
-                            hintText: '날짜 선택',
+                            hintText: 'Pick a date',
                             prefixIcon: Icon(
                               Icons.calendar_month_rounded,
                               color: _CreateVisuals.subtleText,
@@ -327,7 +331,7 @@ class GroupCreateState extends State<GroupCreatePage> {
                           ),
                           child: Text(
                             _selectedDate == null
-                                ? '날짜를 선택하세요'
+                                ? 'Select a date'
                                 : '${_selectedDate!.year}-${_selectedDate!.month.toString().padLeft(2, '0')}-${_selectedDate!.day.toString().padLeft(2, '0')}',
                           ),
                         ),
@@ -343,7 +347,7 @@ class GroupCreateState extends State<GroupCreatePage> {
                         borderRadius: BorderRadius.circular(18),
                         child: InputDecorator(
                           decoration: const InputDecoration(
-                            hintText: '시간 선택',
+                            hintText: 'Pick a time',
                             prefixIcon: Icon(
                               Icons.schedule_rounded,
                               color: _CreateVisuals.subtleText,
@@ -352,7 +356,7 @@ class GroupCreateState extends State<GroupCreatePage> {
                           ),
                           child: Text(
                             _selectedTime == null
-                                ? '시간을 선택하세요'
+                                ? 'Select a time'
                                 : _selectedTime!.format(context),
                           ),
                         ),
@@ -429,7 +433,7 @@ class GroupCreateState extends State<GroupCreatePage> {
               ),
               const SizedBox(height: 14),
               _CreateSectionCard(
-                title: 'SHARED ITEMS (선택)',
+                title: 'SHARED ITEMS (optional)',
                 child: GroupItemsEditor(
                   items: _items,
                   onChanged: (value) {
@@ -458,7 +462,7 @@ class GroupCreateState extends State<GroupCreatePage> {
                     const SizedBox(width: 10),
                     Expanded(
                       child: Text(
-                        '그룹을 만들면 바로 피드에 노출되고, 생성자가 HOST로 등록돼요.',
+                        'The group appears in the feed immediately, and you become the HOST.',
                         style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                           color: _CreateVisuals.locationText,
                         ),

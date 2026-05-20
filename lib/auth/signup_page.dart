@@ -81,8 +81,8 @@ class _SignupPageState extends State<SignupPage> {
         _nicknameAvailable = available;
         _checkedNickname = checkedNickname;
         _nicknameStatusMessage = available
-            ? '사용 가능한 닉네임이에요.'
-            : '이미 사용 중인 닉네임이에요.';
+            ? 'Nickname is available.'
+            : 'This nickname is already taken.';
       });
     } catch (error) {
       if (!mounted) {
@@ -109,9 +109,11 @@ class _SignupPageState extends State<SignupPage> {
     if (!_nicknameChecked ||
         !_nicknameAvailable ||
         _checkedNickname != currentNickname) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('닉네임 중복확인을 먼저 완료해주세요.')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please check nickname availability first.'),
+        ),
+      );
       return;
     }
 
@@ -191,10 +193,13 @@ class _SignupPageState extends State<SignupPage> {
                       children: [
                         _SignupHeader(onBack: widget.onBackToLogin),
                         const SizedBox(height: 24),
-                        Text('회원가입', style: AuthVisuals.titleStyle(context)),
+                        Text(
+                          'Create Account',
+                          style: AuthVisuals.titleStyle(context),
+                        ),
                         const SizedBox(height: 8),
                         Text(
-                          '가입은 @kaist.ac.kr 이메일 인증 링크를 눌러야 완료돼요.',
+                          'Sign-up completes after you click the verification link sent to your @kaist.ac.kr email.',
                           style: AuthVisuals.subtitleStyle(context),
                         ),
                         const SizedBox(height: 24),
@@ -208,10 +213,11 @@ class _SignupPageState extends State<SignupPage> {
                           keyboardType: TextInputType.emailAddress,
                           textInputAction: TextInputAction.next,
                           decoration: _signupFieldDecoration(
-                            labelText: '이메일',
+                            labelText: 'Email',
                             hintText: 'name@kaist.ac.kr',
                             icon: Icons.mail_outline_rounded,
-                            helperText: '가입 후 인증 링크가 발송돼요.',
+                            helperText:
+                                'A verification link will be sent after sign-up.',
                           ),
                           validator: AuthService.instance.validateEmail,
                         ),
@@ -225,8 +231,8 @@ class _SignupPageState extends State<SignupPage> {
                           controller: _nicknameController,
                           textInputAction: TextInputAction.next,
                           decoration: _signupFieldDecoration(
-                            labelText: '닉네임',
-                            hintText: '사용할 닉네임을 입력하세요',
+                            labelText: 'Nickname',
+                            hintText: 'Enter the nickname you want to use',
                             icon: Icons.person_outline_rounded,
                           ),
                           validator: AuthService.instance.validateNickname,
@@ -236,7 +242,8 @@ class _SignupPageState extends State<SignupPage> {
                           builder: (context, constraints) {
                             final isCompact = constraints.maxWidth < 380;
                             final message = Text(
-                              _nicknameStatusMessage ?? '닉네임 중복확인을 진행해주세요.',
+                              _nicknameStatusMessage ??
+                                  'Please check nickname availability.',
                               style: Theme.of(context).textTheme.bodySmall
                                   ?.copyWith(
                                     color: _nicknameStatusMessage == null
@@ -281,7 +288,7 @@ class _SignupPageState extends State<SignupPage> {
                                         ),
                                       )
                                     : const Text(
-                                        '중복확인',
+                                        'Check',
                                         style: TextStyle(
                                           fontWeight: FontWeight.w700,
                                         ),
@@ -320,8 +327,8 @@ class _SignupPageState extends State<SignupPage> {
                           obscureText: _obscurePassword,
                           textInputAction: TextInputAction.next,
                           decoration: _signupFieldDecoration(
-                            labelText: '비밀번호',
-                            hintText: '8자 이상 입력하세요',
+                            labelText: 'Password',
+                            hintText: 'At least 8 characters',
                             icon: Icons.lock_outline_rounded,
                             suffixIcon: IconButton(
                               onPressed: () {
@@ -350,8 +357,8 @@ class _SignupPageState extends State<SignupPage> {
                           obscureText: _obscureConfirmPassword,
                           textInputAction: TextInputAction.next,
                           decoration: _signupFieldDecoration(
-                            labelText: '비밀번호 확인',
-                            hintText: '비밀번호를 다시 입력하세요',
+                            labelText: 'Confirm password',
+                            hintText: 'Enter your password again',
                             icon: Icons.lock_outline_rounded,
                             suffixIcon: IconButton(
                               onPressed: () {
@@ -383,8 +390,8 @@ class _SignupPageState extends State<SignupPage> {
                         DropdownButtonFormField<String>(
                           initialValue: _preferredLocation,
                           decoration: _signupFieldDecoration(
-                            labelText: '선호 위치 (선택)',
-                            hintText: '나중에 선택해도 돼요',
+                            labelText: 'Preferred location (optional)',
+                            hintText: 'You can choose later',
                             icon: Icons.location_on_outlined,
                           ),
                           items: AuthService.preferredLocations
@@ -406,7 +413,7 @@ class _SignupPageState extends State<SignupPage> {
                         ),
                         const SizedBox(height: 10),
                         Text(
-                          '선호 위치는 나중에 마이페이지에서 바꿀 수 있어요.',
+                          'You can change your preferred location later in My Page.',
                           style: Theme.of(context).textTheme.bodySmall
                               ?.copyWith(
                                 color: AuthVisuals.muted,
@@ -415,7 +422,7 @@ class _SignupPageState extends State<SignupPage> {
                         ),
                         const SizedBox(height: 24),
                         AuthGradientButton(
-                          label: '이메일 인증 후 가입',
+                          label: 'Sign up & verify email',
                           onPressed: _isLoading ? null : _handleSignup,
                           isLoading: _isLoading,
                         ),
@@ -428,7 +435,7 @@ class _SignupPageState extends State<SignupPage> {
                               foregroundColor: AuthVisuals.success,
                             ),
                             child: const Text(
-                              '로그인으로 돌아가기',
+                              'Back to Log In',
                               style: TextStyle(fontWeight: FontWeight.w800),
                             ),
                           ),

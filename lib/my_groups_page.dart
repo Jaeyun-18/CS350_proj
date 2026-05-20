@@ -44,7 +44,7 @@ class _MyGroupsTab extends StatelessWidget {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      '내가 참여한 그룹만 모아서 볼 수 있어요.',
+                      'See only the groups you are part of.',
                       style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                         color: _MainVisuals.mutedText,
                       ),
@@ -123,8 +123,8 @@ class _MyGroupsTab extends StatelessWidget {
           const SizedBox(height: 12),
           if (hostedGroups.isEmpty)
             _EmptyGroupCard(
-              title: '호스팅 중인 그룹이 없어요.',
-              subtitle: 'Create a Group으로 첫 호스트 그룹을 만들어보세요.',
+              title: 'You are not hosting any group.',
+              subtitle: 'Tap Create a Group to host your first one.',
             )
           else ...[
             _FeaturedGroupCard(
@@ -164,8 +164,8 @@ class _MyGroupsTab extends StatelessWidget {
           const SizedBox(height: 12),
           if (joinedGroups.isEmpty)
             _EmptyGroupCard(
-              title: '참여 중인 그룹이 없어요.',
-              subtitle: 'Home 탭에서 참여할 그룹을 찾아보거나 새 그룹을 만들어보세요.',
+              title: 'You have not joined any group yet.',
+              subtitle: 'Find a group on the Home tab or create a new one.',
             )
           else
             for (final group in joinedGroups) ...[

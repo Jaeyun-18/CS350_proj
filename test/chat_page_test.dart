@@ -69,7 +69,7 @@ void main() {
     await tester.pumpWidget(_wrap(_FakeChatService(<ChatMessage>[])));
     await tester.pump();
 
-    expect(find.text('아직 메시지가 없어요.\n첫 메시지를 보내보세요.'), findsOneWidget);
+    expect(find.text('No messages yet.\nSend the first one.'), findsOneWidget);
   });
 
   testWidgets('does not send blank messages but sends real ones', (

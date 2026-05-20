@@ -35,9 +35,9 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
       setState(() {
         _sent = true;
       });
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('비밀번호 재설정 메일을 보냈어요.')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Password reset email sent.')),
+      );
     } catch (error) {
       if (!mounted) {
         return;
@@ -98,12 +98,12 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
                         ),
                         const SizedBox(height: 24),
                         Text(
-                          '비밀번호 재설정',
+                          'Reset password',
                           style: AuthVisuals.titleStyle(context),
                         ),
                         const SizedBox(height: 8),
                         Text(
-                          'KAIST 이메일로 재설정 링크를 보내드려요.',
+                          'We will email a reset link to your KAIST address.',
                           style: AuthVisuals.subtitleStyle(context),
                         ),
                         const SizedBox(height: 24),
@@ -118,7 +118,7 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
                           textInputAction: TextInputAction.done,
                           onFieldSubmitted: (_) => _handleSendReset(),
                           decoration: _fieldDecoration(
-                            labelText: '이메일',
+                            labelText: 'Email',
                             hintText: 'name@kaist.ac.kr',
                             icon: Icons.mail_outline_rounded,
                           ),
@@ -158,7 +158,7 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
                         const SizedBox(height: 12),
                         if (_sent)
                           Text(
-                            '메일을 받았다면 받은 편지함과 스팸함을 확인해주세요.',
+                            'If sent, check your inbox and spam folder.',
                             textAlign: TextAlign.center,
                             style: Theme.of(context).textTheme.bodyMedium
                                 ?.copyWith(color: AuthVisuals.subtleText),

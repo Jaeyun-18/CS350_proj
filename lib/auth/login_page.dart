@@ -96,10 +96,10 @@ class _LoginPageState extends State<LoginPage> {
                       children: [
                         const _LoginHeader(),
                         const SizedBox(height: 28),
-                        Text('로그인', style: AuthVisuals.titleStyle(context)),
+                        Text('Log In', style: AuthVisuals.titleStyle(context)),
                         const SizedBox(height: 8),
                         Text(
-                          '이메일 인증이 완료된 KAIST 계정으로만 들어올 수 있어요.',
+                          'Only verified KAIST accounts can sign in.',
                           style: AuthVisuals.subtitleStyle(context),
                         ),
                         const SizedBox(height: 24),
@@ -113,7 +113,7 @@ class _LoginPageState extends State<LoginPage> {
                           keyboardType: TextInputType.emailAddress,
                           textInputAction: TextInputAction.next,
                           decoration: _loginFieldDecoration(
-                            labelText: '이메일',
+                            labelText: 'Email',
                             hintText: 'name@kaist.ac.kr',
                             icon: Icons.mail_outline_rounded,
                           ),
@@ -131,8 +131,8 @@ class _LoginPageState extends State<LoginPage> {
                           textInputAction: TextInputAction.done,
                           onFieldSubmitted: (_) => _handleLogin(),
                           decoration: _loginFieldDecoration(
-                            labelText: '비밀번호',
-                            hintText: '비밀번호를 입력하세요',
+                            labelText: 'Password',
+                            hintText: 'Enter your password',
                             icon: Icons.lock_outline_rounded,
                             suffixIcon: IconButton(
                               onPressed: () {

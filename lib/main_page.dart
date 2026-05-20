@@ -55,8 +55,8 @@ class _MainPageState extends State<MainPage> {
             shrinkWrap: true,
             children: [
               const ListTile(
-                title: Text('선호 위치 선택'),
-                subtitle: Text('이 값은 나중에 다시 바꿀 수 있어요.'),
+                title: Text('Choose preferred location'),
+                subtitle: Text('You can change this later.'),
               ),
               for (final location in AuthService.preferredLocations)
                 ListTile(
@@ -87,7 +87,7 @@ class _MainPageState extends State<MainPage> {
     }
     ScaffoldMessenger.of(
       context,
-    ).showSnackBar(const SnackBar(content: Text('선호 위치를 저장했어요.')));
+    ).showSnackBar(const SnackBar(content: Text('Preferred location saved.')));
   }
 
   void _openCreateGroup() {
@@ -103,16 +103,16 @@ class _MainPageState extends State<MainPage> {
       context: context,
       builder: (context) {
         return AlertDialog(
-          title: const Text('로그아웃할까요?'),
-          content: const Text('다시 사용하려면 로그인이 필요해요.'),
+          title: const Text('Log out?'),
+          content: const Text('You will need to sign in again to use the app.'),
           actions: [
             TextButton(
               onPressed: () => Navigator.of(context).pop(false),
-              child: const Text('취소'),
+              child: const Text('Cancel'),
             ),
             FilledButton(
               onPressed: () => Navigator.of(context).pop(true),
-              child: const Text('로그아웃'),
+              child: const Text('Log Out'),
             ),
           ],
         );
@@ -219,7 +219,9 @@ class _MainPageState extends State<MainPage> {
         }
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('이미 "$conflictCategory" 품목 그룹에 참여 중이라 참여할 수 없어요.'),
+            content: Text(
+              'You are already in a "$conflictCategory" group, so you cannot join.',
+            ),
           ),
         );
         return false;
@@ -230,7 +232,7 @@ class _MainPageState extends State<MainPage> {
         if (!snapshot.exists) {
           throw FirebaseException(
             plugin: 'cloud_firestore',
-            message: '그룹을 찾을 수 없어요.',
+            message: 'Group not found.',
           );
         }
 
@@ -244,19 +246,19 @@ class _MainPageState extends State<MainPage> {
         if (group.isEnded) {
           throw FirebaseException(
             plugin: 'cloud_firestore',
-            message: '이미 종료된 그룹이에요.',
+            message: 'This group has already ended.',
           );
         }
         if (group.isMember) {
           throw FirebaseException(
             plugin: 'cloud_firestore',
-            message: '이미 참여 중인 그룹이에요.',
+            message: 'You are already in this group.',
           );
         }
         if (group.isFull) {
           throw FirebaseException(
             plugin: 'cloud_firestore',
-            message: '이미 정원이 꽉 찬 그룹이에요.',
+            message: 'This group is already full.',
           );
         }
 
@@ -282,7 +284,7 @@ class _MainPageState extends State<MainPage> {
       }
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(const SnackBar(content: Text('그룹에 참여했어요.')));
+      ).showSnackBar(const SnackBar(content: Text('Joined the group.')));
       return true;
     } catch (error) {
       if (!mounted) {
@@ -290,7 +292,7 @@ class _MainPageState extends State<MainPage> {
       }
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(SnackBar(content: Text('참여 실패: $error')));
+      ).showSnackBar(SnackBar(content: Text('Join failed: $error')));
       return false;
     }
   }
@@ -311,7 +313,7 @@ class _MainPageState extends State<MainPage> {
             body: Center(
               child: Padding(
                 padding: const EdgeInsets.all(24),
-                child: Text('프로필을 불러오지 못했어요.\n${initSnapshot.error}'),
+                child: Text('Failed to load profile.\n${initSnapshot.error}'),
               ),
             ),
           );
@@ -333,7 +335,7 @@ class _MainPageState extends State<MainPage> {
                 ? nicknameValue!
                 : (authDisplayName?.isNotEmpty ?? false)
                 ? authDisplayName!
-                : '학생';
+                : 'Student';
             final preferredLocation =
                 (preferredLocationValue?.isNotEmpty ?? false)
                 ? preferredLocationValue
@@ -406,7 +408,7 @@ class _MainPageState extends State<MainPage> {
 
                 final myPage = _MyPageTab(
                   displayName: displayName,
-                  email: widget.user.email ?? '이메일 없음',
+                  email: widget.user.email ?? 'No email',
                   preferredLocation: preferredLocation,
                   emailVerified: emailVerified,
                   onEditPreferredLocation: _editPreferredLocation,

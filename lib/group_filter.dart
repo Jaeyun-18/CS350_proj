@@ -97,7 +97,7 @@ class _GroupFilterSheetState extends State<_GroupFilterSheet> {
               Row(
                 children: [
                   const Text(
-                    '그룹 필터',
+                    'Group filters',
                     style: TextStyle(
                       fontSize: 20,
                       fontWeight: FontWeight.w900,
@@ -112,12 +112,12 @@ class _GroupFilterSheetState extends State<_GroupFilterSheet> {
                             _locations.clear();
                             _categories.clear();
                           }),
-                    child: const Text('초기화'),
+                    child: const Text('Reset'),
                   ),
                 ],
               ),
               const SizedBox(height: 8),
-              _label('마켓 위치'),
+              _label('Market location'),
               const SizedBox(height: 10),
               Wrap(
                 spacing: 8,
@@ -132,7 +132,7 @@ class _GroupFilterSheetState extends State<_GroupFilterSheet> {
                 ],
               ),
               const SizedBox(height: 18),
-              _label('품목 카테고리'),
+              _label('Item category'),
               const SizedBox(height: 10),
               Wrap(
                 spacing: 8,
@@ -164,7 +164,7 @@ class _GroupFilterSheetState extends State<_GroupFilterSheet> {
                     ),
                   ),
                   child: const Text(
-                    '적용',
+                    'Apply',
                     style: TextStyle(fontWeight: FontWeight.w800),
                   ),
                 ),

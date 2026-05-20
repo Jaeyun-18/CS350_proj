@@ -6,12 +6,12 @@ import 'package:flutter/foundation.dart';
 /// 공동구매 품목 카테고리. 그룹 품목 필터와 동일 품목 중복 참여 제한에서도
 /// 같은 목록을 재사용한다.
 const List<String> kItemCategories = <String>[
-  '신선식품',
-  '냉장/냉동',
-  '가공식품',
-  '음료',
-  '생활용품',
-  '기타',
+  'Fresh',
+  'Chilled/Frozen',
+  'Packaged',
+  'Beverage',
+  'Household',
+  'Other',
 ];
 
 /// 그룹 공동구매 품목 한 건.
@@ -117,13 +117,13 @@ Future<void> toggleItemClaim({
 }) {
   return FirebaseFirestore.instance.runTransaction((transaction) async {
     if (uid.isEmpty) {
-      throw StateError('로그인 정보를 확인할 수 없어요.');
+      throw StateError('Cannot verify your sign-in.');
     }
     final snapshot = await transaction.get(groupRef);
     final items = readGroupItems(snapshot.data() ?? <String, dynamic>{});
     final index = items.indexWhere((item) => item.id == itemId);
     if (index < 0) {
-      throw StateError('품목을 찾을 수 없어요.');
+      throw StateError('Item not found.');
     }
 
     final item = items[index];
@@ -131,7 +131,7 @@ Future<void> toggleItemClaim({
     if (item.claimedBy == uid) {
       updated = item.released();
     } else if (item.isClaimed) {
-      throw StateError('이미 다른 멤버가 담당 중인 품목이에요.');
+      throw StateError('Another member already claimed this item.');
     } else {
       updated = item.claimedByUser(uid);
     }

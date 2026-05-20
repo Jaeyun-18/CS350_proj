@@ -106,23 +106,25 @@ class _GroupSettingsPageState extends State<_GroupSettingsPage> {
     final time = _selectedTime;
 
     if (location == null) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('장보기 장소를 선택해주세요.')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please choose a shopping location.')),
+      );
       return;
     }
 
     if (date == null || time == null) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('날짜와 시간을 모두 선택해주세요.')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please pick both a date and time.')),
+      );
       return;
     }
 
     final nowNum = widget.group.nowNum;
     if (_maxMembers < nowNum) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('최대 멤버 수는 현재 인원($nowNum)보다 작을 수 없어요.')),
+        SnackBar(
+          content: Text('Max members cannot be less than current ($nowNum).'),
+        ),
       );
       return;
     }
@@ -168,9 +170,9 @@ class _GroupSettingsPageState extends State<_GroupSettingsPage> {
       if (!mounted) {
         return;
       }
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('그룹 설정 저장 실패: $error')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to save group settings: $error')),
+      );
     } finally {
       if (mounted) {
         setState(() {
@@ -185,16 +187,18 @@ class _GroupSettingsPageState extends State<_GroupSettingsPage> {
       context: context,
       builder: (context) {
         return AlertDialog(
-          title: const Text('그룹을 종료할까요?'),
-          content: const Text('종료하면 홈과 내 그룹에서 더 이상 보이지 않아요.'),
+          title: const Text('End this group?'),
+          content: const Text(
+            'After ending, it will no longer appear on Home or My Groups.',
+          ),
           actions: [
             TextButton(
               onPressed: () => Navigator.of(context).pop(false),
-              child: const Text('취소'),
+              child: const Text('Cancel'),
             ),
             FilledButton(
               onPressed: () => Navigator.of(context).pop(true),
-              child: const Text('종료'),
+              child: const Text('End'),
             ),
           ],
         );
@@ -226,7 +230,7 @@ class _GroupSettingsPageState extends State<_GroupSettingsPage> {
       }
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(SnackBar(content: Text('그룹 종료 실패: $error')));
+      ).showSnackBar(SnackBar(content: Text('Failed to end group: $error')));
     } finally {
       if (mounted) {
         setState(() {
@@ -245,18 +249,18 @@ class _GroupSettingsPageState extends State<_GroupSettingsPage> {
       context: context,
       builder: (context) {
         return AlertDialog(
-          title: const Text('모집을 종료할까요?'),
+          title: const Text('Close recruitment?'),
           content: const Text(
-            '모집을 종료하면 새 사람은 더 이상 이 그룹에 참여할 수 없어요.\n기존 멤버와 호스트는 계속 그룹을 볼 수 있어요.',
+            'After closing, new users cannot join this group.\nExisting members and the host can still see it.',
           ),
           actions: [
             TextButton(
               onPressed: () => Navigator.of(context).pop(false),
-              child: const Text('취소'),
+              child: const Text('Cancel'),
             ),
             FilledButton(
               onPressed: () => Navigator.of(context).pop(true),
-              child: const Text('종료'),
+              child: const Text('Close'),
             ),
           ],
         );
@@ -293,9 +297,9 @@ class _GroupSettingsPageState extends State<_GroupSettingsPage> {
       if (!mounted) {
         return;
       }
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('모집 종료 실패: $error')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to close recruitment: $error')),
+      );
     } finally {
       if (mounted) {
         setState(() {
@@ -314,18 +318,18 @@ class _GroupSettingsPageState extends State<_GroupSettingsPage> {
       context: context,
       builder: (context) {
         return AlertDialog(
-          title: const Text('모집을 다시 시작할까요?'),
+          title: const Text('Reopen recruitment?'),
           content: const Text(
-            '모집을 다시 시작하면 다른 사람들이 이 그룹을 보고 참여할 수 있어요.\n정원이 가득 차 있으면 참여는 여전히 불가능해요.',
+            'After reopening, others can see and join this group.\nIf the group is full, joining is still not possible.',
           ),
           actions: [
             TextButton(
               onPressed: () => Navigator.of(context).pop(false),
-              child: const Text('취소'),
+              child: const Text('Cancel'),
             ),
             FilledButton(
               onPressed: () => Navigator.of(context).pop(true),
-              child: const Text('시작'),
+              child: const Text('Reopen'),
             ),
           ],
         );
@@ -362,9 +366,9 @@ class _GroupSettingsPageState extends State<_GroupSettingsPage> {
       if (!mounted) {
         return;
       }
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('모집 시작 실패: $error')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to reopen recruitment: $error')),
+      );
     } finally {
       if (mounted) {
         setState(() {
@@ -407,7 +411,7 @@ class _GroupSettingsPageState extends State<_GroupSettingsPage> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        '그룹 설정',
+                        'Group Settings',
                         style: Theme.of(context).textTheme.headlineSmall
                             ?.copyWith(
                               color: Colors.white,
@@ -416,7 +420,7 @@ class _GroupSettingsPageState extends State<_GroupSettingsPage> {
                       ),
                       const SizedBox(height: 6),
                       Text(
-                        '그룹 이름, 장소, 일정, 최대 멤버 수를 수정할 수 있어요.',
+                        'You can edit the group name, location, schedule, and max members.',
                         style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                           color: _MainVisuals.featuredMuted,
                         ),
@@ -433,8 +437,8 @@ class _GroupSettingsPageState extends State<_GroupSettingsPage> {
                         ),
                         child: Text(
                           widget.group.isRecruitmentClosed
-                              ? '모집 상태: 종료'
-                              : '모집 상태: 진행 중',
+                              ? 'Recruitment: Closed'
+                              : 'Recruitment: Open',
                           style: const TextStyle(
                             color: Colors.white,
                             fontWeight: FontWeight.w700,
@@ -451,12 +455,12 @@ class _GroupSettingsPageState extends State<_GroupSettingsPage> {
                     controller: _titleController,
                     validator: (value) {
                       if ((value ?? '').trim().isEmpty) {
-                        return '그룹 이름을 입력해주세요.';
+                        return 'Please enter a group name.';
                       }
                       return null;
                     },
                     decoration: const InputDecoration(
-                      hintText: '그룹 이름',
+                      hintText: 'Group name',
                       prefixIcon: Icon(Icons.groups_rounded),
                       border: InputBorder.none,
                     ),
@@ -481,7 +485,7 @@ class _GroupSettingsPageState extends State<_GroupSettingsPage> {
                       });
                     },
                     decoration: const InputDecoration(
-                      hintText: '장보기 장소',
+                      hintText: 'Shopping location',
                       prefixIcon: Icon(Icons.location_on_outlined),
                       border: InputBorder.none,
                     ),
@@ -498,13 +502,13 @@ class _GroupSettingsPageState extends State<_GroupSettingsPage> {
                           borderRadius: BorderRadius.circular(18),
                           child: InputDecorator(
                             decoration: const InputDecoration(
-                              hintText: '날짜 선택',
+                              hintText: 'Pick a date',
                               prefixIcon: Icon(Icons.calendar_month_rounded),
                               border: InputBorder.none,
                             ),
                             child: Text(
                               _selectedDate == null
-                                  ? '날짜를 선택하세요'
+                                  ? 'Select a date'
                                   : '${_selectedDate!.year}-${_selectedDate!.month.toString().padLeft(2, '0')}-${_selectedDate!.day.toString().padLeft(2, '0')}',
                             ),
                           ),
@@ -520,13 +524,13 @@ class _GroupSettingsPageState extends State<_GroupSettingsPage> {
                           borderRadius: BorderRadius.circular(18),
                           child: InputDecorator(
                             decoration: const InputDecoration(
-                              hintText: '시간 선택',
+                              hintText: 'Pick a time',
                               prefixIcon: Icon(Icons.schedule_rounded),
                               border: InputBorder.none,
                             ),
                             child: Text(
                               _selectedTime == null
-                                  ? '시간을 선택하세요'
+                                  ? 'Select a time'
                                   : _selectedTime!.format(context),
                             ),
                           ),
@@ -665,7 +669,7 @@ class _GroupSettingsPageState extends State<_GroupSettingsPage> {
                 OutlinedButton.icon(
                   onPressed: _isSaving ? null : _endGroup,
                   icon: const Icon(Icons.cancel_outlined),
-                  label: const Text('그룹 종료'),
+                  label: const Text('End group'),
                   style: OutlinedButton.styleFrom(
                     minimumSize: const Size.fromHeight(56),
                     foregroundColor: const Color(0xFFDC2626),
@@ -690,7 +694,9 @@ class _GroupSettingsPageState extends State<_GroupSettingsPage> {
                         : Icons.how_to_reg_outlined,
                   ),
                   label: Text(
-                    widget.group.isRecruitmentClosed ? '모집 시작' : '모집 종료',
+                    widget.group.isRecruitmentClosed
+                        ? 'Reopen recruitment'
+                        : 'Close recruitment',
                   ),
                   style: OutlinedButton.styleFrom(
                     minimumSize: const Size.fromHeight(56),

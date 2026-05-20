@@ -29,7 +29,7 @@ class _VerifyEmailPageState extends State<VerifyEmailPage> {
         return;
       }
       setState(() {
-        _statusMessage = '인증 메일을 다시 보냈어요.';
+        _statusMessage = 'Verification email resent.';
       });
     } catch (error) {
       if (!mounted) {
@@ -65,11 +65,12 @@ class _VerifyEmailPageState extends State<VerifyEmailPage> {
           return;
         }
         setState(() {
-          _statusMessage = '인증이 완료됐어요. 잠시만 기다려주세요.';
+          _statusMessage = 'Verified. Please wait a moment.';
         });
       } else if (mounted) {
         setState(() {
-          _statusMessage = '아직 인증이 확인되지 않았어요. 메일 링크를 눌렀는지 다시 확인해주세요.';
+          _statusMessage =
+              'Not verified yet. Please make sure you clicked the link in the email.';
         });
       }
     } catch (error) {
@@ -118,19 +119,19 @@ class _VerifyEmailPageState extends State<VerifyEmailPage> {
                       ),
                       const SizedBox(height: 16),
                       Text(
-                        '이메일 인증이 필요해요',
+                        'Email verification required',
                         textAlign: TextAlign.center,
                         style: AuthVisuals.titleStyle(context),
                       ),
                       const SizedBox(height: 12),
                       Text(
-                        '${widget.user.email}로 보낸 인증 메일의 링크를 눌러주세요.\n인증이 끝나면 아래 버튼으로 확인할 수 있어요.',
+                        'Click the link in the email we sent to ${widget.user.email}.\nOnce verified, tap the button below to confirm.',
                         textAlign: TextAlign.center,
                         style: AuthVisuals.subtitleStyle(context),
                       ),
                       const SizedBox(height: 24),
                       AuthGradientButton(
-                        label: '인증 완료 확인',
+                        label: 'I have verified',
                         onPressed: _isChecking
                             ? null
                             : _handleCheckVerification,
@@ -160,7 +161,7 @@ class _VerifyEmailPageState extends State<VerifyEmailPage> {
                                 ),
                               )
                             : const Text(
-                                '인증 메일 다시 보내기',
+                                'Resend verification email',
                                 style: TextStyle(fontWeight: FontWeight.w800),
                               ),
                       ),
@@ -173,7 +174,7 @@ class _VerifyEmailPageState extends State<VerifyEmailPage> {
                           foregroundColor: AuthVisuals.success,
                         ),
                         child: const Text(
-                          '로그아웃',
+                          'Log Out',
                           style: TextStyle(fontWeight: FontWeight.w800),
                         ),
                       ),
