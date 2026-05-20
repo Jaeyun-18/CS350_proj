@@ -502,7 +502,16 @@ class _GroupEntry {
 
   bool get isFull => !isEnded && maxNum > 0 && nowNum >= maxNum;
 
-  bool get isJoinable => !isEnded && isRecruitmentOpen && !isMember && !isFull;
+  bool get isUpcoming {
+    final scheduled = dateTime;
+    if (scheduled == null) {
+      return true;
+    }
+    return scheduled.isAfter(DateTime.now());
+  }
+
+  bool get isJoinable =>
+      !isEnded && isRecruitmentOpen && !isMember && !isFull && isUpcoming;
 
   int get remainingSlots => maxNum <= 0 ? 0 : maxNum - nowNum;
 
