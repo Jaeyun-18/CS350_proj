@@ -25,6 +25,11 @@ class MessagingService {
     if (uid.isEmpty || uid == _registeredUid) {
       return;
     }
+    // 비정상 경로(이전 사용자 unregister 없이 다른 uid로 진입)에서
+    // 이전 사용자 문서에 이 기기 토큰이 남지 않도록 먼저 정리한다.
+    if (_registeredUid != null) {
+      await unregister();
+    }
     try {
       final settings = await _fcm.requestPermission();
       if (settings.authorizationStatus == AuthorizationStatus.denied) {

@@ -46,8 +46,7 @@ export const onChatMessage = onDocumentCreated(
     const senderId = message.senderId ?? "";
     if (senderId.length === 0) return; // 작성자 식별 불가하면 발송 보류.
 
-    const memberIds =
-      (groupSnap.get("member_ids") as string[] | undefined) ?? [];
+    const memberIds = toStringArray(groupSnap.get("member_ids"));
     const targets = memberIds.filter((id) => id !== senderId);
     if (targets.length === 0) return;
 
@@ -57,9 +56,7 @@ export const onChatMessage = onDocumentCreated(
     const userSnaps = await db.getAll(...userRefs);
     const tokenIndex: { token: string; snap: DocumentSnapshot }[] = [];
     for (const snap of userSnaps) {
-      const tokens =
-        (snap.get("fcmTokens") as string[] | undefined) ?? [];
-      for (const token of tokens) {
+      for (const token of toStringArray(snap.get("fcmTokens"))) {
         tokenIndex.push({ token, snap });
       }
     }
@@ -83,6 +80,17 @@ export const onChatMessage = onDocumentCreated(
     await cleanupInvalidTokens(tokenIndex, response.responses);
   },
 );
+
+/**
+ * Firestore에서 읽은 값이 비-문자열을 포함하거나 배열이 아닌 경우를 방어해
+ * 안전한 string 배열만 반환한다.
+ */
+function toStringArray(value: unknown): string[] {
+  if (!Array.isArray(value)) return [];
+  return value.filter(
+    (entry): entry is string => typeof entry === "string" && entry.length > 0,
+  );
+}
 
 async function cleanupInvalidTokens(
   tokenIndex: { token: string; snap: DocumentSnapshot }[],
