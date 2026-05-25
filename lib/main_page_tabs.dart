@@ -1,6 +1,6 @@
 part of 'main_page.dart';
 
-class _HomeTab extends StatelessWidget {
+class _HomeTab extends StatefulWidget {
   const _HomeTab({
     required this.user,
     required this.displayName,
@@ -13,7 +13,6 @@ class _HomeTab extends StatelessWidget {
     required this.onFilterPressed,
     required this.activeFilterCount,
     required this.onOpenGroup,
-    required this.onJoinGroup,
   });
 
   final User user;
@@ -27,8 +26,13 @@ class _HomeTab extends StatelessWidget {
   final VoidCallback onFilterPressed;
   final int activeFilterCount;
   final ValueChanged<_GroupEntry> onOpenGroup;
-  final Future<bool> Function(DocumentReference<Map<String, dynamic>> ref)
-  onJoinGroup;
+
+  @override
+  State<_HomeTab> createState() => _HomeTabState();
+}
+
+class _HomeTabState extends State<_HomeTab> {
+  String? _selectedGroupId;
 
   String _formatDateTime(DateTime value) {
     final y = value.year.toString().padLeft(4, '0');
@@ -41,11 +45,15 @@ class _HomeTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final initial = displayName.isNotEmpty ? displayName[0].toUpperCase() : 'W';
-    final featuredGroup = openGroups.isNotEmpty ? openGroups.first : null;
-    final remainingGroups = openGroups.length > 1
-        ? openGroups.sublist(1)
-        : <_GroupEntry>[];
+    final initial =
+        widget.displayName.isNotEmpty ? widget.displayName[0].toUpperCase() : 'W';
+    final selectedMatches = _selectedGroupId == null
+        ? <_GroupEntry>[]
+        : widget.openGroups
+              .where((group) => group.id == _selectedGroupId)
+              .toList();
+    final selectedGroup = selectedMatches.isEmpty ? null : selectedMatches.first;
+    final featuredGroup = selectedGroup;
 
     return SafeArea(
       child: ListView(
@@ -76,7 +84,7 @@ class _HomeTab extends StatelessWidget {
                     ),
                     const SizedBox(height: 6),
                     Text(
-                      'Hello, $displayName',
+                      'Hello, ${widget.displayName}',
                       style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                         color: _MainVisuals.mutedText,
                       ),
@@ -87,7 +95,7 @@ class _HomeTab extends StatelessWidget {
               const SizedBox(width: 12),
               _NotificationButton(count: 3),
               const SizedBox(width: 10),
-              _AvatarBadge(letter: initial, photoUrl: photoUrl),
+              _AvatarBadge(letter: initial, photoUrl: widget.photoUrl),
             ],
           ),
           const SizedBox(height: 18),
@@ -95,7 +103,8 @@ class _HomeTab extends StatelessWidget {
             children: [
               Expanded(
                 child: InkWell(
-                  onTap: () => onEditPreferredLocation(preferredLocation),
+                  onTap: () =>
+                      widget.onEditPreferredLocation(widget.preferredLocation),
                   borderRadius: BorderRadius.circular(18),
                   child: Container(
                     height: 56,
@@ -118,7 +127,7 @@ class _HomeTab extends StatelessWidget {
                         const SizedBox(width: 10),
                         Expanded(
                           child: Text(
-                            preferredLocation ?? 'Set preferred location',
+                            widget.preferredLocation ?? 'Set preferred location',
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                             style: Theme.of(context).textTheme.bodyMedium
@@ -139,7 +148,7 @@ class _HomeTab extends StatelessWidget {
               ),
               const SizedBox(width: 10),
               InkWell(
-                onTap: onFilterPressed,
+                onTap: widget.onFilterPressed,
                 borderRadius: BorderRadius.circular(18),
                 child: Container(
                   width: 56,
@@ -153,7 +162,7 @@ class _HomeTab extends StatelessWidget {
                     alignment: Alignment.center,
                     children: [
                       const Icon(Icons.tune_rounded, color: Colors.white),
-                      if (activeFilterCount > 0)
+                      if (widget.activeFilterCount > 0)
                         Positioned(
                           right: -4,
                           top: -4,
@@ -172,7 +181,7 @@ class _HomeTab extends StatelessWidget {
                               ),
                             ),
                             child: Text(
-                              '$activeFilterCount',
+                              '${widget.activeFilterCount}',
                               textAlign: TextAlign.center,
                               style: const TextStyle(
                                 color: Colors.white,
@@ -190,7 +199,7 @@ class _HomeTab extends StatelessWidget {
           ),
           const SizedBox(height: 14),
           InkWell(
-            onTap: onCreateGroup,
+            onTap: widget.onCreateGroup,
             borderRadius: BorderRadius.circular(20),
             child: Container(
               height: 56,
@@ -244,7 +253,7 @@ class _HomeTab extends StatelessWidget {
                   border: Border.all(color: _MainVisuals.softBorder),
                 ),
                 child: Text(
-                  '${openGroups.length}',
+                  '${widget.openGroups.length}',
                   style: Theme.of(context).textTheme.labelMedium?.copyWith(
                     color: _MainVisuals.green,
                     fontWeight: FontWeight.w800,
@@ -266,7 +275,7 @@ class _HomeTab extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 12),
-          if (openGroups.isEmpty)
+          if (widget.openGroups.isEmpty)
             Container(
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
@@ -295,38 +304,67 @@ class _HomeTab extends StatelessWidget {
                 ],
               ),
             )
-          else ...[
-            _FeaturedGroupCard(
-              group: featuredGroup!,
-              formatDateTime: _formatDateTime,
-              actionLabel: 'JOIN',
-              actionIcon: Icons.how_to_reg_rounded,
-              badgeLabel: featuredGroup.location,
-              onTap: () => onOpenGroup(featuredGroup),
-              onAction: () {
-                unawaited(onJoinGroup(featuredGroup.docRef));
-              },
-            ),
-            const SizedBox(height: 12),
-            for (final group in remainingGroups) ...[
+          else if (selectedGroup == null)
+            for (final group in widget.openGroups) ...[
               _CompactGroupCard(
                 group: group,
                 formatDateTime: _formatDateTime,
-                actionLabel: 'JOIN',
-                actionIcon: Icons.add_circle_outline_rounded,
-                onTap: () => onOpenGroup(group),
+                actionLabel: 'VIEW',
+                actionIcon: Icons.visibility_outlined,
+                onTap: () {
+                  setState(() {
+                    _selectedGroupId = group.id;
+                  });
+                },
                 onAction: () {
-                  unawaited(onJoinGroup(group.docRef));
+                  widget.onOpenGroup(group);
                 },
               ),
+              const SizedBox(height: 12),
+            ]
+          else ...[
+            for (final group in widget.openGroups) ...[
+              if (group.id == featuredGroup!.id)
+                _FeaturedGroupCard(
+                  group: group,
+                  formatDateTime: _formatDateTime,
+                  actionLabel: 'VIEW',
+                  actionIcon: Icons.visibility_outlined,
+                  badgeLabel: group.location,
+                  onTap: () {
+                    setState(() {
+                      _selectedGroupId = null;
+                    });
+                  },
+                  onAction: () {
+                    widget.onOpenGroup(group);
+                  },
+                )
+              else
+                _CompactGroupCard(
+                  group: group,
+                  formatDateTime: _formatDateTime,
+                  actionLabel: 'VIEW',
+                  actionIcon: Icons.visibility_outlined,
+                  onTap: () {
+                    setState(() {
+                      _selectedGroupId = group.id;
+                    });
+                  },
+                  onAction: () {
+                    widget.onOpenGroup(group);
+                  },
+                ),
               const SizedBox(height: 12),
             ],
           ],
           const SizedBox(height: 6),
           Text(
-            emailVerified ? 'Email verified' : 'Email verification pending',
+            widget.emailVerified
+                ? 'Email verified'
+                : 'Email verification pending',
             style: Theme.of(context).textTheme.bodySmall?.copyWith(
-              color: emailVerified
+              color: widget.emailVerified
                   ? _MainVisuals.green
                   : _MainVisuals.mutedText,
             ),
@@ -719,6 +757,45 @@ class _FeaturedGroupCard extends StatelessWidget {
                   ),
                 ],
               ),
+              const SizedBox(height: 14),
+              if (group.items.isEmpty)
+                Text(
+                  'No shared items yet',
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: _MainVisuals.featuredMuted,
+                  ),
+                )
+              else
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: [
+                    for (final item in group.items)
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 8,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: 0.10),
+                          borderRadius: BorderRadius.circular(999),
+                          border: Border.all(
+                            color: Colors.white.withValues(alpha: 0.12),
+                          ),
+                        ),
+                        child: Text(
+                          item.name,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: Theme.of(context).textTheme.bodySmall
+                              ?.copyWith(
+                                color: Colors.white,
+                                fontWeight: FontWeight.w700,
+                              ),
+                        ),
+                      ),
+                  ],
+                ),
             ],
           ),
         ),

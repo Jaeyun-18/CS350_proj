@@ -415,7 +415,6 @@ class _MainPageState extends State<MainPage> {
                   onFilterPressed: _openFilter,
                   activeFilterCount: _filter.activeCount,
                   onOpenGroup: _openGroupPage,
-                  onJoinGroup: _joinGroup,
                 );
 
                 final myGroupsPage = _MyGroupsTab(
