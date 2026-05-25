@@ -30,6 +30,17 @@
 	<string>Allow access to your photo library to choose a profile picture.</string>
 	<key>NSCameraUsageDescription</key>
 	<string>Allow camera access to take a profile picture.</string>
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleURLName</key>
+			<string>webuydivvy</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>webuydivvy</string>
+			</array>
+		</dict>
+	</array>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>

@@ -1188,8 +1188,8 @@ PODS:
     - abseil/meta/type_traits
     - abseil/xcprivacy
   - abseil/xcprivacy (1.20240722.0)
-  - app_links (7.0.0):
-    - Flutter
+  - app_links (6.4.1):
+    - FlutterMacOS
   - BoringSSL-GRPC (0.0.37):
     - BoringSSL-GRPC/Implementation (= 0.0.37)
     - BoringSSL-GRPC/Interface (= 0.0.37)
@@ -1197,9 +1197,12 @@ PODS:
     - BoringSSL-GRPC/Interface (= 0.0.37)
   - BoringSSL-GRPC/Interface (0.0.37)
   - cloud_firestore (6.4.1):
-    - Firebase/Firestore (= 12.13.0)
+    - Firebase/CoreOnly (~> 12.13.0)
+    - Firebase/Firestore (~> 12.13.0)
     - firebase_core
-    - Flutter
+    - FlutterMacOS
+  - file_selector_macos (0.0.1):
+    - FlutterMacOS
   - Firebase/Auth (12.13.0):
     - Firebase/CoreOnly
     - FirebaseAuth (~> 12.13.0)
@@ -1215,20 +1218,23 @@ PODS:
     - Firebase/CoreOnly
     - FirebaseStorage (~> 12.13.0)
   - firebase_auth (6.5.1):
-    - Firebase/Auth (= 12.13.0)
+    - Firebase/Auth (~> 12.13.0)
+    - Firebase/CoreOnly (~> 12.13.0)
     - firebase_core
-    - Flutter
+    - FlutterMacOS
   - firebase_core (4.9.0):
-    - Firebase/CoreOnly (= 12.13.0)
-    - Flutter
+    - Firebase/CoreOnly (~> 12.13.0)
+    - FlutterMacOS
   - firebase_messaging (16.2.2):
-    - Firebase/Messaging (= 12.13.0)
+    - Firebase/CoreOnly (~> 12.13.0)
+    - Firebase/Messaging (~> 12.13.0)
     - firebase_core
-    - Flutter
+    - FlutterMacOS
   - firebase_storage (13.4.1):
-    - Firebase/Storage (= 12.13.0)
+    - Firebase/CoreOnly (~> 12.13.0)
+    - Firebase/Storage (~> 12.13.0)
     - firebase_core
-    - Flutter
+    - FlutterMacOS
   - FirebaseAppCheckInterop (12.13.0)
   - FirebaseAuth (12.13.0):
     - FirebaseAppCheckInterop (~> 12.13.0)
@@ -1290,7 +1296,7 @@ PODS:
     - FirebaseCoreExtension (~> 12.13.0)
     - GoogleUtilities/Environment (~> 8.1)
     - GTMSessionFetcher/Core (< 6.0, >= 3.4)
-  - Flutter (1.0.0)
+  - FlutterMacOS (1.0.0)
   - GoogleDataTransport (10.1.0):
     - nanopb (~> 3.30910.0)
     - PromisesObjC (~> 2.4)
@@ -1411,8 +1417,6 @@ PODS:
   - gRPC-Core/Interface (1.69.0)
   - gRPC-Core/Privacy (1.69.0)
   - GTMSessionFetcher/Core (5.3.0)
-  - image_picker_ios (0.0.1):
-    - Flutter
   - leveldb-library (1.22.6)
   - nanopb (3.30910.0):
     - nanopb/decode (= 3.30910.0)
@@ -1420,20 +1424,19 @@ PODS:
   - nanopb/decode (3.30910.0)
   - nanopb/encode (3.30910.0)
   - PromisesObjC (2.4.0)
-  - RecaptchaInterop (101.0.0)
   - share_plus (0.0.1):
-    - Flutter
+    - FlutterMacOS
 
 DEPENDENCIES:
-  - app_links (from `.symlinks/plugins/app_links/ios`)
-  - cloud_firestore (from `.symlinks/plugins/cloud_firestore/ios`)
-  - firebase_auth (from `.symlinks/plugins/firebase_auth/ios`)
-  - firebase_core (from `.symlinks/plugins/firebase_core/ios`)
-  - firebase_messaging (from `.symlinks/plugins/firebase_messaging/ios`)
-  - firebase_storage (from `.symlinks/plugins/firebase_storage/ios`)
-  - Flutter (from `Flutter`)
-  - image_picker_ios (from `.symlinks/plugins/image_picker_ios/ios`)
-  - share_plus (from `.symlinks/plugins/share_plus/ios`)
+  - app_links (from `Flutter/ephemeral/.symlinks/plugins/app_links/macos`)
+  - cloud_firestore (from `Flutter/ephemeral/.symlinks/plugins/cloud_firestore/macos`)
+  - file_selector_macos (from `Flutter/ephemeral/.symlinks/plugins/file_selector_macos/macos`)
+  - firebase_auth (from `Flutter/ephemeral/.symlinks/plugins/firebase_auth/macos`)
+  - firebase_core (from `Flutter/ephemeral/.symlinks/plugins/firebase_core/macos`)
+  - firebase_messaging (from `Flutter/ephemeral/.symlinks/plugins/firebase_messaging/macos`)
+  - firebase_storage (from `Flutter/ephemeral/.symlinks/plugins/firebase_storage/macos`)
+  - FlutterMacOS (from `Flutter/ephemeral`)
+  - share_plus (from `Flutter/ephemeral/.symlinks/plugins/share_plus/macos`)
 
 SPEC REPOS:
   trunk:
@@ -1460,38 +1463,38 @@ SPEC REPOS:
     - leveldb-library
     - nanopb
     - PromisesObjC
-    - RecaptchaInterop
 
 EXTERNAL SOURCES:
   app_links:
-    :path: ".symlinks/plugins/app_links/ios"
+    :path: Flutter/ephemeral/.symlinks/plugins/app_links/macos
   cloud_firestore:
-    :path: ".symlinks/plugins/cloud_firestore/ios"
+    :path: Flutter/ephemeral/.symlinks/plugins/cloud_firestore/macos
+  file_selector_macos:
+    :path: Flutter/ephemeral/.symlinks/plugins/file_selector_macos/macos
   firebase_auth:
-    :path: ".symlinks/plugins/firebase_auth/ios"
+    :path: Flutter/ephemeral/.symlinks/plugins/firebase_auth/macos
   firebase_core:
-    :path: ".symlinks/plugins/firebase_core/ios"
+    :path: Flutter/ephemeral/.symlinks/plugins/firebase_core/macos
   firebase_messaging:
-    :path: ".symlinks/plugins/firebase_messaging/ios"
+    :path: Flutter/ephemeral/.symlinks/plugins/firebase_messaging/macos
   firebase_storage:
-    :path: ".symlinks/plugins/firebase_storage/ios"
-  Flutter:
-    :path: Flutter
-  image_picker_ios:
-    :path: ".symlinks/plugins/image_picker_ios/ios"
+    :path: Flutter/ephemeral/.symlinks/plugins/firebase_storage/macos
+  FlutterMacOS:
+    :path: Flutter/ephemeral
   share_plus:
-    :path: ".symlinks/plugins/share_plus/ios"
+    :path: Flutter/ephemeral/.symlinks/plugins/share_plus/macos
 
 SPEC CHECKSUMS:
   abseil: a05cc83bf02079535e17169a73c5be5ba47f714b
-  app_links: a754cbec3c255bd4bbb4d236ecc06f28cd9a7ce8
+  app_links: 05a6ec2341985eb05e9f97dc63f5837c39895c3f
   BoringSSL-GRPC: dded2a44897e45f28f08ae87a55ee4bcd19bc508
-  cloud_firestore: 95c2f2d0a75b8ca7ca9f629fc903ad4dbd030c2a
+  cloud_firestore: 152eed1556a7d95a12057b07c389d6dbbc3db827
+  file_selector_macos: 9e9e068e90ebee155097d00e89ae91edb2374db7
   Firebase: 7d62445aeabdaea36f7d372f33052fed9a72514f
-  firebase_auth: bba295912fb4b0e71c91b2737d29403f4c2c3573
-  firebase_core: 0013f886fbd0b4950865551eaab47784424bfdb5
-  firebase_messaging: b875e4088ddd9ecd1834f6c89f6e0a1ffc7d98f0
-  firebase_storage: 400da7dd1eaeb5f4b5e583dd67cdabe4ce62b4d6
+  firebase_auth: f512858bd4475955843cfe58267119454bf6a74b
+  firebase_core: 8a780c7f989df0ca42dcd55332fc1b203f11f848
+  firebase_messaging: 3cb926039fe036f6b92834334d6e23ab33007f1f
+  firebase_storage: a2b84e14598032fa18af05f4af5c9890a35ad631
   FirebaseAppCheckInterop: db09d7412340fb4b5a8727d4d410e5a5c780dd56
   FirebaseAuth: fedecd40125af7f898ba4f0a328ac9f3a9c3b8c4
   FirebaseAuthInterop: 63d36ca102054d7336f87aec87b1c68a0bab77e0
@@ -1504,19 +1507,17 @@ SPEC CHECKSUMS:
   FirebaseMessaging: 30564b85d2f81a96f9d312bd23acf8186ff092ae
   FirebaseSharedSwift: 76bdd9de8ff1da7a601236ee058253e36206978e
   FirebaseStorage: a4709ed4e33f0b19dc6ac4889bb3c946fe8865ef
-  Flutter: cabc95a1d2626b1b06e7179b784ebcf0c0cde467
+  FlutterMacOS: d0db08ddef1a9af05a5ec4b724367152bb0500b1
   GoogleDataTransport: aae35b7ea0c09004c3797d53c8c41f66f219d6a7
   GoogleUtilities: 00c88b9a86066ef77f0da2fab05f65d7768ed8e1
   "gRPC-C++": cc207623316fb041a7a3e774c252cf68a058b9e8
   gRPC-Core: 860978b7db482de8b4f5e10677216309b5ff6330
   GTMSessionFetcher: 127211aeec0b1e904fc49f4f6f895dcc535b0ecf
-  image_picker_ios: e0ece4aa2a75771a7de3fa735d26d90817041326
   leveldb-library: cc8b8f8e013647a295ad3f8cd2ddf49a6f19be19
   nanopb: fad817b59e0457d11a5dfbde799381cd727c1275
   PromisesObjC: f5707f49cb48b9636751c5b2e7d227e43fba9f47
-  RecaptchaInterop: 11e0b637842dfb48308d242afc3f448062325aba
-  share_plus: 50da8cb520a8f0f65671c6c6a99b3617ed10a58a
+  share_plus: 510bf0af1a42cd602274b4629920c9649c52f4cc
 
-PODFILE CHECKSUM: cef568d592d78bea97db3b15a64583d744c65627
+PODFILE CHECKSUM: 54d867c82ac51cbd61b565781b9fada492027009
 
 COCOAPODS: 1.16.2

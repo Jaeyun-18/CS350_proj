@@ -31,9 +31,35 @@ class _GroupPageState extends State<_GroupPage> {
 
   bool get _isJoinable => _group.isJoinable;
 
+  bool get _isMeetingPassed {
+    final scheduled = _group.dateTime;
+    if (scheduled == null) {
+      return false;
+    }
+    return DateTime.now().isAfter(scheduled);
+  }
+
+  bool get _isRatingOpen =>
+      _isMeetingPassed && !_group.isExpiredForHistory && !_isEnded;
+
+  List<String> get _orderedParticipantIds {
+    final memberIds = _group.memberIds.toSet();
+    final ordered = <String>[];
+    if (_group.ownerId.isNotEmpty) {
+      ordered.add(_group.ownerId);
+      memberIds.remove(_group.ownerId);
+    }
+    final others = memberIds.toList()..sort();
+    ordered.addAll(others);
+    return ordered;
+  }
+
   String get _statusLabel {
     if (_isEnded) {
       return 'ENDED';
+    }
+    if (_isRatingOpen) {
+      return 'RATING';
     }
     if (_isRecruitmentClosed) {
       return 'CLOSED';
@@ -53,6 +79,9 @@ class _GroupPageState extends State<_GroupPage> {
   Color get _statusColor {
     if (_isEnded) {
       return const Color(0xFF64748B);
+    }
+    if (_isRatingOpen) {
+      return const Color(0xFF8B5CF6);
     }
     if (_isRecruitmentClosed) {
       return const Color(0xFFF59E0B);
@@ -225,6 +254,22 @@ class _GroupPageState extends State<_GroupPage> {
     _applyGroupData(result);
   }
 
+  Future<void> _shareGroup(BuildContext context) async {
+    final deepLink = DeepLinkService.instance.buildGroupUri(_group.id);
+    final box = context.findRenderObject() as RenderBox?;
+    final shareOrigin = box == null
+        ? null
+        : box.localToGlobal(Offset.zero) & box.size;
+
+    await SharePlus.instance.share(
+      ShareParams(
+        text: 'WeBuyDivvy group invite:\n$deepLink',
+        title: 'Share group',
+        sharePositionOrigin: shareOrigin,
+      ),
+    );
+  }
+
   void _openChat() {
     Navigator.of(context).push(
       MaterialPageRoute(
@@ -233,6 +278,19 @@ class _GroupPageState extends State<_GroupPage> {
           groupName: _group.title,
           memberCount: _group.nowNum,
           currentUserId: _group.currentUserId,
+        ),
+      ),
+    );
+  }
+
+  Future<void> _openMemberProfile(String userId) async {
+    await Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => _UserProfilePage(
+          userId: userId,
+          viewerUserId: _group.currentUserId,
+          groupId: _group.id,
+          groupTitle: _group.title,
         ),
       ),
     );
@@ -294,6 +352,16 @@ class _GroupPageState extends State<_GroupPage> {
         ),
         centerTitle: false,
         actions: [
+          if ((_isOwner || _isMember) && !_isEnded)
+            Builder(
+              builder: (context) {
+                return IconButton(
+                  onPressed: () => _shareGroup(context),
+                  icon: const Icon(Icons.ios_share_outlined),
+                  tooltip: 'Share group',
+                );
+              },
+            ),
           if (_isOwner && !_isEnded)
             IconButton(
               onPressed: _openSettings,
@@ -355,34 +423,37 @@ class _GroupPageState extends State<_GroupPage> {
               ),
               const SizedBox(height: 16),
               _InfoPanel(
-                title: 'MEMBERS',
+                title: 'PARTICIPANTS',
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Check current members and remaining seats.',
+                      'Tap a participant to view their profile and rating.',
                       style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                         color: _MainVisuals.mutedText,
                       ),
                     ),
                     const SizedBox(height: 12),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: _StatTile(
-                            label: 'Current',
-                            value: '${_group.nowNum}',
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: _StatTile(
-                            label: 'Remaining',
-                            value: '${_group.remainingSlots}',
-                          ),
+                    if (_orderedParticipantIds.isEmpty)
+                      _EmptyGroupCard(
+                        title: 'No participants found.',
+                        subtitle: 'The participant list will appear here.',
+                      )
+                    else
+                      for (
+                        var i = 0;
+                        i < _orderedParticipantIds.length;
+                        i++
+                      ) ...[
+                        if (i > 0) const SizedBox(height: 10),
+                        _GroupParticipantTile(
+                          userId: _orderedParticipantIds[i],
+                          isHost: _orderedParticipantIds[i] == _group.ownerId,
+                          currentUserId: _group.currentUserId,
+                          onTap: () =>
+                              _openMemberProfile(_orderedParticipantIds[i]),
                         ),
                       ],
-                    ),
                   ],
                 ),
               ),
@@ -403,6 +474,8 @@ class _GroupPageState extends State<_GroupPage> {
                 child: Text(
                   _isEnded
                       ? 'This group has ended. Go back to find another group.'
+                      : _isRatingOpen
+                      ? 'The meeting time has passed. You can view participants and rate them for one week.'
                       : _isOwner
                       ? 'As host, use the settings icon to edit or end the group.'
                       : _isMember
@@ -476,6 +549,8 @@ class _GroupPageState extends State<_GroupPage> {
           child: _ActionButton(
             label: _isSubmitting
                 ? 'Joining...'
+                : _isMeetingPassed
+                ? 'Meeting passed'
                 : _isRecruitmentClosed
                 ? 'Recruitment closed'
                 : _group.isFull
@@ -747,40 +822,164 @@ class _DetailRow extends StatelessWidget {
   }
 }
 
-class _StatTile extends StatelessWidget {
-  const _StatTile({required this.label, required this.value});
+class _GroupParticipantTile extends StatelessWidget {
+  const _GroupParticipantTile({
+    required this.userId,
+    required this.isHost,
+    required this.currentUserId,
+    required this.onTap,
+  });
+
+  final String userId;
+  final bool isHost;
+  final String currentUserId;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
+      stream: AuthService.instance.watchProfile(userId),
+      builder: (context, snapshot) {
+        final data = snapshot.data?.data();
+        final displayNameValue = data?['displayName']?.toString().trim();
+        final legacyNickname = data?['nickname']?.toString().trim();
+        final authName = (displayNameValue?.isNotEmpty ?? false)
+            ? displayNameValue!
+            : (legacyNickname?.isNotEmpty ?? false)
+            ? legacyNickname!
+            : userId;
+        final photoUrlValue = data?['photoURL']?.toString().trim();
+        final photoUrl = (photoUrlValue?.isNotEmpty ?? false)
+            ? photoUrlValue
+            : null;
+        final ratingAverage = _readDouble(
+          data?['ratingAverage'],
+          fallback: 0.0,
+        );
+        final ratingCount = _readInt(data?['ratingCount'], fallback: 0);
+        final initial = authName.isNotEmpty ? authName[0].toUpperCase() : 'U';
+
+        return Material(
+          color: Colors.transparent,
+          child: InkWell(
+            onTap: onTap,
+            borderRadius: BorderRadius.circular(20),
+            child: Container(
+              padding: const EdgeInsets.all(14),
+              decoration: BoxDecoration(
+                color: _MainVisuals.pageBackground,
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(color: _MainVisuals.cardBorder),
+              ),
+              child: Row(
+                children: [
+                  _ProfileAvatar(initial: initial, photoUrl: photoUrl),
+                  const SizedBox(width: 14),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Flexible(
+                              child: Text(
+                                authName,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: Theme.of(context).textTheme.titleMedium
+                                    ?.copyWith(
+                                      color: _MainVisuals.text,
+                                      fontWeight: FontWeight.w800,
+                                    ),
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            if (isHost)
+                              _MemberChip(
+                                label: 'HOST',
+                                background: const Color(0xFFFEF3C7),
+                                foreground: const Color(0xFFD97706),
+                              ),
+                            if (userId == currentUserId) ...[
+                              const SizedBox(width: 6),
+                              _MemberChip(
+                                label: 'YOU',
+                                background: _MainVisuals.softMint,
+                                foreground: _MainVisuals.green,
+                              ),
+                            ],
+                          ],
+                        ),
+                        const SizedBox(height: 6),
+                        Row(
+                          children: [
+                            const Icon(
+                              Icons.star_rounded,
+                              color: Color(0xFFF59E0B),
+                              size: 16,
+                            ),
+                            const SizedBox(width: 4),
+                            Text(
+                              ratingCount == 0
+                                  ? 'No ratings yet'
+                                  : ratingAverage.toStringAsFixed(1),
+                              style: Theme.of(context).textTheme.bodySmall
+                                  ?.copyWith(
+                                    color: _MainVisuals.mutedText,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                            ),
+                            const SizedBox(width: 6),
+                            Text(
+                              '($ratingCount)',
+                              style: Theme.of(context).textTheme.bodySmall
+                                  ?.copyWith(color: _MainVisuals.subtleText),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  const Icon(
+                    Icons.chevron_right_rounded,
+                    color: _MainVisuals.subtleText,
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+}
+
+class _MemberChip extends StatelessWidget {
+  const _MemberChip({
+    required this.label,
+    required this.background,
+    required this.foreground,
+  });
 
   final String label;
-  final String value;
+  final Color background;
+  final Color foreground;
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
       decoration: BoxDecoration(
-        color: _MainVisuals.pageBackground,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: _MainVisuals.cardBorder),
+        color: background,
+        borderRadius: BorderRadius.circular(999),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            label,
-            style: Theme.of(context).textTheme.labelMedium?.copyWith(
-              color: _MainVisuals.mutedText,
-              fontWeight: FontWeight.w700,
-            ),
-          ),
-          const SizedBox(height: 6),
-          Text(
-            value,
-            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-              color: _MainVisuals.text,
-              fontWeight: FontWeight.w900,
-            ),
-          ),
-        ],
+      child: Text(
+        label,
+        style: Theme.of(context).textTheme.labelSmall?.copyWith(
+          color: foreground,
+          fontWeight: FontWeight.w800,
+        ),
       ),
     );
   }

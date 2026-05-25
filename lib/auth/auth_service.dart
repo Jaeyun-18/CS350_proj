@@ -1,6 +1,8 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
+import '../profile_storage.dart';
+
 class AuthService {
   AuthService._();
 
@@ -51,6 +53,16 @@ class AuthService {
   }
 
   String _normalizeDisplayName(String value) => value.trim().toLowerCase();
+
+  double _readDouble(dynamic value, {required double fallback}) {
+    if (value is double) {
+      return value;
+    }
+    if (value is num) {
+      return value.toDouble();
+    }
+    return fallback;
+  }
 
   String _displayNameLockId(String value) =>
       '__display_name_lock__${_normalizeDisplayName(value)}';
@@ -243,7 +255,12 @@ class AuthService {
     final existingPreferredLocation = existing?['preferredLocation']
         ?.toString()
         .trim();
+    final existingPhotoUrl = existing?['photoURL']?.toString().trim();
+    final existingRatingCount = existing?['ratingCount'];
+    final existingRatingTotal = existing?['ratingTotal'];
+    final existingRatingAverage = existing?['ratingAverage'];
     final fallbackNickname = user.displayName?.trim();
+    final fallbackPhotoUrl = user.photoURL?.trim();
     final displayName = (existingDisplayName?.isNotEmpty ?? false)
         ? existingDisplayName!
         : (legacyNickname?.isNotEmpty ?? false)
@@ -255,6 +272,17 @@ class AuthService {
     final preferredLocation = sanitizePreferredLocation(
       existingPreferredLocation,
     );
+    final photoUrl = (existingPhotoUrl?.isNotEmpty ?? false)
+        ? existingPhotoUrl!
+        : (fallbackPhotoUrl?.isNotEmpty ?? false)
+        ? fallbackPhotoUrl!
+        : null;
+    final ratingCount = _readDouble(existingRatingCount, fallback: 0.0).toInt();
+    final ratingTotal = _readDouble(existingRatingTotal, fallback: 0.0).toInt();
+    final ratingAverage = _readDouble(
+      existingRatingAverage,
+      fallback: ratingCount > 0 ? ratingTotal / ratingCount : 0.0,
+    );
 
     final payload = <String, dynamic>{
       'uid': user.uid,
@@ -262,8 +290,12 @@ class AuthService {
       'displayName': displayName,
       'displayNameLower': normalizedDisplayName,
       'preferredLocation': preferredLocation,
+      'photoURL': photoUrl,
       'emailVerified': user.emailVerified,
       'registrationStatus': user.emailVerified ? 'active' : 'pending',
+      'ratingCount': ratingCount,
+      'ratingTotal': ratingTotal,
+      'ratingAverage': ratingAverage,
       'updatedAt': FieldValue.serverTimestamp(),
     };
 
@@ -291,8 +323,20 @@ class AuthService {
     if (existing?['preferredLocation'] != preferredLocation) {
       updates['preferredLocation'] = preferredLocation;
     }
+    if (existing?['photoURL'] != photoUrl) {
+      updates['photoURL'] = photoUrl;
+    }
     if (existing?['emailVerified'] != user.emailVerified) {
       updates['emailVerified'] = user.emailVerified;
+    }
+    if (existing?['ratingCount'] == null) {
+      updates['ratingCount'] = ratingCount;
+    }
+    if (existing?['ratingTotal'] == null) {
+      updates['ratingTotal'] = ratingTotal;
+    }
+    if (existing?['ratingAverage'] == null) {
+      updates['ratingAverage'] = ratingAverage;
     }
     if (user.emailVerified && existing?['registrationStatus'] != 'active') {
       updates['registrationStatus'] = 'active';
@@ -301,6 +345,16 @@ class AuthService {
     if (updates.isNotEmpty) {
       updates['updatedAt'] = FieldValue.serverTimestamp();
       await ref.set(updates, SetOptions(merge: true));
+    }
+
+    final currentUser = _auth.currentUser;
+    if (currentUser != null && currentUser.uid == user.uid) {
+      try {
+        await currentUser.updateDisplayName(displayName);
+      } catch (_) {}
+      try {
+        await currentUser.updatePhotoURL(photoUrl);
+      } catch (_) {}
     }
   }
 
@@ -318,10 +372,20 @@ class AuthService {
     required String uid,
     required String? photoUrl,
   }) async {
+    final normalizedPhotoUrl = (photoUrl == null || photoUrl.isEmpty)
+        ? null
+        : photoUrl;
     await profileRef(uid).set({
-      'photoURL': (photoUrl == null || photoUrl.isEmpty) ? null : photoUrl,
+      'photoURL': normalizedPhotoUrl,
       'updatedAt': FieldValue.serverTimestamp(),
     }, SetOptions(merge: true));
+
+    final currentUser = _auth.currentUser;
+    if (currentUser != null && currentUser.uid == uid) {
+      try {
+        await currentUser.updatePhotoURL(normalizedPhotoUrl);
+      } catch (_) {}
+    }
   }
 
   Future<void> updateDisplayName({
@@ -387,6 +451,13 @@ class AuthService {
         'updatedAt': FieldValue.serverTimestamp(),
       }, SetOptions(merge: true));
     });
+
+    final currentUser = _auth.currentUser;
+    if (currentUser != null && currentUser.uid == uid) {
+      try {
+        await currentUser.updateDisplayName(trimmedNew);
+      } catch (_) {}
+    }
   }
 
   Future<void> markEmailVerified(User user) async {
@@ -395,6 +466,96 @@ class AuthService {
       'registrationStatus': user.emailVerified ? 'active' : 'pending',
       'updatedAt': FieldValue.serverTimestamp(),
     }, SetOptions(merge: true));
+  }
+
+  Future<void> deleteAccount({required String password}) async {
+    final currentUser = _auth.currentUser;
+    if (currentUser == null) {
+      throw FirebaseAuthException(
+        code: 'user-not-found',
+        message: 'No signed-in user found.',
+      );
+    }
+    final email = currentUser.email;
+    if (email == null || email.isEmpty) {
+      throw FirebaseAuthException(
+        code: 'invalid-email',
+        message: 'The signed-in account does not have an email address.',
+      );
+    }
+
+    final credential = EmailAuthProvider.credential(
+      email: email,
+      password: password,
+    );
+    await currentUser.reauthenticateWithCredential(credential);
+
+    final uid = currentUser.uid;
+    final profileSnapshot = await profileRef(uid).get();
+    final profile = profileSnapshot.data();
+    final displayName = profile?['displayName']?.toString().trim();
+
+    final memberships = await FirebaseFirestore.instance
+        .collection('group')
+        .where('member_ids', arrayContains: uid)
+        .get();
+
+    const maxOpsPerBatch = 400;
+    var batch = FirebaseFirestore.instance.batch();
+    var opCount = 0;
+
+    Future<void> flushBatch() async {
+      if (opCount == 0) {
+        return;
+      }
+      await batch.commit();
+      batch = FirebaseFirestore.instance.batch();
+      opCount = 0;
+    }
+
+    void queueDelete(DocumentReference<Map<String, dynamic>> ref) {
+      batch.delete(ref);
+      opCount += 1;
+    }
+
+    void queueUpdate(
+      DocumentReference<Map<String, dynamic>> ref,
+      Map<String, dynamic> data,
+    ) {
+      batch.update(ref, data);
+      opCount += 1;
+    }
+
+    for (final doc in memberships.docs) {
+      final data = doc.data();
+      final ownerId = data['user_id']?.toString() ?? '';
+      if (ownerId == uid) {
+        queueDelete(doc.reference);
+      } else {
+        queueUpdate(doc.reference, {
+          'member_ids': FieldValue.arrayRemove([uid]),
+          'now_num': FieldValue.increment(-1),
+          'updatedAt': FieldValue.serverTimestamp(),
+        });
+      }
+
+      if (opCount >= maxOpsPerBatch) {
+        await flushBatch();
+      }
+    }
+
+    if (displayName != null && displayName.isNotEmpty) {
+      queueDelete(_displayNameLockRef(displayName));
+    }
+    queueDelete(profileRef(uid));
+
+    await flushBatch();
+
+    try {
+      await ProfileStorage.instance.deleteAvatar(uid);
+    } catch (_) {}
+
+    await currentUser.delete();
   }
 }
 
@@ -407,6 +568,8 @@ String friendlyAuthMessage(Object error) {
         return error.message ?? 'Please enter a nickname.';
       case 'nickname-taken':
         return error.message ?? 'This nickname is already taken.';
+      case 'account-has-active-groups':
+        return error.message ?? 'Please end your active groups first.';
       case 'invalid-email':
         return 'Email format is invalid.';
       case 'email-already-in-use':

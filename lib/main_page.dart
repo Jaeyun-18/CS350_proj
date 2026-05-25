@@ -4,8 +4,10 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:share_plus/share_plus.dart';
 
 import 'auth/auth_service.dart';
+import 'deep_link_service.dart';
 import 'chat_page.dart';
 import 'chat_service.dart';
 import 'group_filter.dart';
@@ -13,12 +15,14 @@ import 'group_items.dart';
 import 'group_items_editor.dart';
 import 'groupcreate.dart' as groupcreate;
 import 'messaging_service.dart';
+import 'rating_service.dart';
 import 'profile_edit_page.dart';
 
 part 'main_page_tabs.dart';
 part 'group_page.dart';
 part 'group_settings_page.dart';
 part 'my_groups_page.dart';
+part 'user_profile_page.dart';
 
 class MainPage extends StatefulWidget {
   const MainPage({super.key, required this.user});
@@ -31,6 +35,7 @@ class MainPage extends StatefulWidget {
 
 class _MainPageState extends State<MainPage> {
   late final Future<void> _profileInitFuture;
+  StreamSubscription<String>? _deepLinkSubscription;
   int _selectedIndex = 0;
   GroupFilter _filter = GroupFilter();
 
@@ -40,6 +45,24 @@ class _MainPageState extends State<MainPage> {
     _profileInitFuture = AuthService.instance.ensureProfile(widget.user);
     // 로그인 직후 FCM 토큰 등록(외부 인프라 미구성이면 silent no-op).
     unawaited(MessagingService.instance.registerForUser(widget.user.uid));
+    _deepLinkSubscription = DeepLinkService.instance.groupIdStream.listen((
+      groupId,
+    ) {
+      DeepLinkService.instance.clearPendingGroupId(groupId);
+      unawaited(_openGroupFromDeepLink(groupId));
+    });
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final pendingGroupId = DeepLinkService.instance.takePendingGroupId();
+      if (pendingGroupId != null) {
+        unawaited(_openGroupFromDeepLink(pendingGroupId));
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _deepLinkSubscription?.cancel();
+    super.dispose();
   }
 
   Future<void> _editPreferredLocation(String? currentValue) async {
@@ -126,6 +149,77 @@ class _MainPageState extends State<MainPage> {
     }
   }
 
+  Future<void> _confirmDeleteAccount() async {
+    final passwordController = TextEditingController();
+    try {
+      final password = await showDialog<String?>(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) {
+          return AlertDialog(
+            title: const Text('Delete account?'),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'This will permanently delete your profile, avatar, and sign-in account.',
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: passwordController,
+                  obscureText: true,
+                  decoration: const InputDecoration(
+                    labelText: 'Current password',
+                    hintText: 'Enter your password to confirm',
+                  ),
+                ),
+                const SizedBox(height: 10),
+                const Text(
+                  'Your hosted groups will be removed automatically when you delete your account.',
+                ),
+              ],
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(null),
+                child: const Text('Cancel'),
+              ),
+              FilledButton(
+                onPressed: () {
+                  Navigator.of(context).pop(passwordController.text.trim());
+                },
+                child: const Text('Delete'),
+              ),
+            ],
+          );
+        },
+      );
+
+      if (!mounted || password == null || password.isEmpty) {
+        return;
+      }
+
+      await AuthService.instance.deleteAccount(password: password);
+    } on FirebaseAuthException catch (error) {
+      if (!mounted) {
+        return;
+      }
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(friendlyAuthMessage(error))));
+    } catch (error) {
+      if (!mounted) {
+        return;
+      }
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Delete failed: $error')));
+    } finally {
+      passwordController.dispose();
+    }
+  }
+
   Future<void> _openFilter() async {
     final result = await showGroupFilterSheet(context, _filter);
     if (result != null && mounted) {
@@ -133,6 +227,151 @@ class _MainPageState extends State<MainPage> {
         _filter = result;
       });
     }
+  }
+
+  void _openNotifications(List<_NotificationEntry> notifications) {
+    showModalBottomSheet<void>(
+      context: context,
+      showDragHandle: true,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+      ),
+      builder: (context) {
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Notifications',
+                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                    color: _MainVisuals.text,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  'Meeting reminders and rating windows appear here.',
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: _MainVisuals.mutedText,
+                  ),
+                ),
+                const SizedBox(height: 16),
+                if (notifications.isEmpty)
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(18),
+                    decoration: BoxDecoration(
+                      color: _MainVisuals.pageBackground,
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(color: _MainVisuals.cardBorder),
+                    ),
+                    child: Text(
+                      'No active notifications yet.',
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        color: _MainVisuals.mutedText,
+                      ),
+                    ),
+                  )
+                else
+                  Flexible(
+                    child: ListView.separated(
+                      shrinkWrap: true,
+                      physics: const BouncingScrollPhysics(),
+                      itemCount: notifications.length,
+                      separatorBuilder: (context, _) =>
+                          const SizedBox(height: 10),
+                      itemBuilder: (context, index) {
+                        final entry = notifications[index];
+                        return Material(
+                          color: Colors.transparent,
+                          child: InkWell(
+                            onTap: () {
+                              Navigator.of(context).pop();
+                              _openGroupPage(entry.group);
+                            },
+                            borderRadius: BorderRadius.circular(18),
+                            child: Container(
+                              padding: const EdgeInsets.all(16),
+                              decoration: BoxDecoration(
+                                color: _MainVisuals.pageBackground,
+                                borderRadius: BorderRadius.circular(18),
+                                border: Border.all(
+                                  color: _MainVisuals.cardBorder,
+                                ),
+                              ),
+                              child: Row(
+                                children: [
+                                  Container(
+                                    width: 44,
+                                    height: 44,
+                                    decoration: BoxDecoration(
+                                      color: entry.accent.withValues(
+                                        alpha: 0.14,
+                                      ),
+                                      borderRadius: BorderRadius.circular(14),
+                                    ),
+                                    child: Icon(
+                                      entry.icon,
+                                      color: entry.accent,
+                                      size: 22,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 12),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          entry.title,
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                          style: Theme.of(context)
+                                              .textTheme
+                                              .titleMedium
+                                              ?.copyWith(
+                                                color: _MainVisuals.text,
+                                                fontWeight: FontWeight.w800,
+                                              ),
+                                        ),
+                                        const SizedBox(height: 4),
+                                        Text(
+                                          entry.subtitle,
+                                          maxLines: 2,
+                                          overflow: TextOverflow.ellipsis,
+                                          style: Theme.of(context)
+                                              .textTheme
+                                              .bodySmall
+                                              ?.copyWith(
+                                                color: _MainVisuals.mutedText,
+                                              ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  const SizedBox(width: 12),
+                                  const Icon(
+                                    Icons.chevron_right_rounded,
+                                    color: _MainVisuals.subtleText,
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
   }
 
   Future<void> _openGroupPage(_GroupEntry group) async {
@@ -151,6 +390,107 @@ class _MainPageState extends State<MainPage> {
         _selectedIndex = 1;
       });
     }
+  }
+
+  Future<void> _openGroupFromDeepLink(String groupId) async {
+    if (!mounted || groupId.trim().isEmpty) {
+      return;
+    }
+
+    final group = await _fetchGroupById(groupId.trim());
+    if (!mounted) {
+      return;
+    }
+
+    if (group == null) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('공유된 그룹을 찾을 수 없어요.')));
+      return;
+    }
+
+    DeepLinkService.instance.clearPendingGroupId(groupId.trim());
+    await _openGroupPage(group);
+  }
+
+  Future<_GroupEntry?> _fetchGroupById(String groupId) async {
+    final snapshot = await FirebaseFirestore.instance
+        .collection('group')
+        .doc(groupId)
+        .get();
+    if (!snapshot.exists) {
+      return null;
+    }
+
+    return _GroupEntry.fromData(
+      id: snapshot.id,
+      data: snapshot.data() ?? <String, dynamic>{},
+      currentUserId: widget.user.uid,
+      reference: snapshot.reference,
+    );
+  }
+
+  List<_NotificationEntry> _buildNotificationEntries(List<_GroupEntry> groups) {
+    final now = DateTime.now();
+    final entries = <_NotificationEntry>[];
+
+    for (final group in groups) {
+      if (!group.isMember || group.isEnded || group.dateTime == null) {
+        continue;
+      }
+      final meetingTime = group.dateTime!;
+      final difference = meetingTime.difference(now);
+      if (difference.inMinutes >= 0 && difference <= const Duration(days: 1)) {
+        entries.add(
+          _NotificationEntry(
+            group: group,
+            title: 'Meeting soon',
+            subtitle:
+                '${group.title} starts at ${_formatNotificationDateTime(meetingTime)}',
+            icon: Icons.schedule_rounded,
+            accent: const Color(0xFF0EA5E9),
+            priority: 0,
+          ),
+        );
+      } else if (now.isAfter(meetingTime) &&
+          now.isBefore(meetingTime.add(const Duration(days: 7)))) {
+        entries.add(
+          _NotificationEntry(
+            group: group,
+            title: 'Rate members',
+            subtitle:
+                'You can still rate participants for ${group.title} until 7 days after the meeting.',
+            icon: Icons.star_rounded,
+            accent: const Color(0xFFF59E0B),
+            priority: 1,
+          ),
+        );
+      }
+    }
+
+    entries.sort((a, b) {
+      final priorityCompare = a.priority.compareTo(b.priority);
+      if (priorityCompare != 0) {
+        return priorityCompare;
+      }
+      final dateA = a.group.dateTime;
+      final dateB = b.group.dateTime;
+      if (dateA != null && dateB != null) {
+        return dateA.compareTo(dateB);
+      }
+      return a.title.compareTo(b.title);
+    });
+
+    return entries;
+  }
+
+  String _formatNotificationDateTime(DateTime value) {
+    final y = value.year.toString().padLeft(4, '0');
+    final m = value.month.toString().padLeft(2, '0');
+    final d = value.day.toString().padLeft(2, '0');
+    final h = value.hour.toString().padLeft(2, '0');
+    final min = value.minute.toString().padLeft(2, '0');
+    return '$y-$m-$d $h:$min';
   }
 
   Future<void> _openProfileEdit({
@@ -344,7 +684,10 @@ class _MainPageState extends State<MainPage> {
             final preferredLocationValue = data?['preferredLocation']
                 ?.toString()
                 .trim();
+            final ratingAverageValue = data?['ratingAverage'];
+            final ratingCountValue = data?['ratingCount'];
             final authDisplayName = widget.user.displayName?.trim();
+            final authPhotoUrl = widget.user.photoURL?.trim();
             final displayName = (displayNameValue?.isNotEmpty ?? false)
                 ? displayNameValue!
                 : (nicknameValue?.isNotEmpty ?? false)
@@ -359,9 +702,16 @@ class _MainPageState extends State<MainPage> {
             final photoUrlValue = data?['photoURL']?.toString().trim();
             final photoUrl = (photoUrlValue?.isNotEmpty ?? false)
                 ? photoUrlValue
+                : (authPhotoUrl?.isNotEmpty ?? false)
+                ? authPhotoUrl
                 : null;
             final emailVerified =
                 data?['emailVerified'] == true || widget.user.emailVerified;
+            final ratingAverage = _readDouble(
+              ratingAverageValue,
+              fallback: 0.0,
+            );
+            final ratingCount = _readInt(ratingCountValue, fallback: 0);
             return StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
               stream: FirebaseFirestore.instance
                   .collection('group')
@@ -390,7 +740,10 @@ class _MainPageState extends State<MainPage> {
                       ..sort(_sortOpenGroups);
                 final hostedGroupEntries =
                     groupEntries
-                        .where((entry) => entry.isOwner && !entry.isEnded)
+                        .where(
+                          (entry) =>
+                              entry.isOwner && !entry.isExpiredForHistory,
+                        )
                         .toList()
                       ..sort(_sortMyGroups);
                 final joinedGroupEntries =
@@ -399,10 +752,13 @@ class _MainPageState extends State<MainPage> {
                           (entry) =>
                               entry.isMember &&
                               !entry.isOwner &&
-                              !entry.isEnded,
+                              !entry.isExpiredForHistory,
                         )
                         .toList()
                       ..sort(_sortMyGroups);
+                final notificationEntries = _buildNotificationEntries(
+                  groupEntries,
+                );
                 final homePage = _HomeTab(
                   user: widget.user,
                   displayName: displayName,
@@ -410,9 +766,12 @@ class _MainPageState extends State<MainPage> {
                   emailVerified: emailVerified,
                   photoUrl: photoUrl,
                   openGroups: openGroupEntries,
+                  notificationCount: notificationEntries.length,
                   onCreateGroup: _openCreateGroup,
                   onEditPreferredLocation: _editPreferredLocation,
                   onFilterPressed: _openFilter,
+                  onNotificationsPressed: () =>
+                      _openNotifications(notificationEntries),
                   activeFilterCount: _filter.activeCount,
                   onOpenGroup: _openGroupPage,
                 );
@@ -432,12 +791,15 @@ class _MainPageState extends State<MainPage> {
                   preferredLocation: preferredLocation,
                   emailVerified: emailVerified,
                   photoUrl: photoUrl,
+                  ratingAverage: ratingAverage,
+                  ratingCount: ratingCount,
                   onEditPreferredLocation: _editPreferredLocation,
                   onEditProfile: () => _openProfileEdit(
                     displayName: displayName,
                     photoUrl: photoUrl,
                   ),
                   onLogout: _confirmLogout,
+                  onDeleteAccount: _confirmDeleteAccount,
                 );
 
                 final pages = <Widget>[homePage, myGroupsPage, myPage];
@@ -542,6 +904,14 @@ class _GroupEntry {
 
   int get remainingSlots => maxNum <= 0 ? 0 : maxNum - nowNum;
 
+  bool get isExpiredForHistory {
+    final scheduled = dateTime;
+    if (scheduled == null) {
+      return false;
+    }
+    return DateTime.now().isAfter(scheduled.add(const Duration(days: 7)));
+  }
+
   DocumentReference<Map<String, dynamic>> get docRef {
     final ref = reference;
     if (ref == null) {
@@ -551,12 +921,40 @@ class _GroupEntry {
   }
 }
 
+class _NotificationEntry {
+  const _NotificationEntry({
+    required this.group,
+    required this.title,
+    required this.subtitle,
+    required this.icon,
+    required this.accent,
+    required this.priority,
+  });
+
+  final _GroupEntry group;
+  final String title;
+  final String subtitle;
+  final IconData icon;
+  final Color accent;
+  final int priority;
+}
+
 int _readInt(dynamic value, {required int fallback}) {
   if (value is int) {
     return value;
   }
   if (value is num) {
     return value.toInt();
+  }
+  return fallback;
+}
+
+double _readDouble(dynamic value, {required double fallback}) {
+  if (value is double) {
+    return value;
+  }
+  if (value is num) {
+    return value.toDouble();
   }
   return fallback;
 }
@@ -715,42 +1113,64 @@ class _MainNavItem extends StatelessWidget {
 }
 
 class _NotificationButton extends StatelessWidget {
-  const _NotificationButton({required this.count});
+  const _NotificationButton({required this.count, required this.onTap});
 
   final int count;
+  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: 40,
-      height: 40,
-      decoration: BoxDecoration(
-        color: Colors.white,
+    return Material(
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(14),
+      child: InkWell(
+        onTap: onTap,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: _MainVisuals.cardBorder),
-      ),
-      child: Stack(
-        clipBehavior: Clip.none,
-        alignment: Alignment.center,
-        children: [
-          const Icon(
-            Icons.notifications_none_rounded,
-            color: _MainVisuals.subtleText,
-            size: 20,
+        child: Container(
+          width: 40,
+          height: 40,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: _MainVisuals.cardBorder),
           ),
-          Positioned(
-            right: 6,
-            top: 6,
-            child: Container(
-              width: 8,
-              height: 8,
-              decoration: const BoxDecoration(
-                color: Color(0xFFF97316),
-                shape: BoxShape.circle,
+          child: Stack(
+            clipBehavior: Clip.none,
+            alignment: Alignment.center,
+            children: [
+              const Icon(
+                Icons.notifications_none_rounded,
+                color: _MainVisuals.subtleText,
+                size: 20,
               ),
-            ),
+              if (count > 0)
+                Positioned(
+                  right: 4,
+                  top: 4,
+                  child: Container(
+                    constraints: const BoxConstraints(
+                      minWidth: 16,
+                      minHeight: 16,
+                    ),
+                    padding: const EdgeInsets.symmetric(horizontal: 4),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF97316),
+                      borderRadius: BorderRadius.circular(999),
+                      border: Border.all(color: Colors.white, width: 1.5),
+                    ),
+                    child: Text(
+                      count > 9 ? '9+' : '$count',
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 9,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                  ),
+                ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }
@@ -791,41 +1211,6 @@ class _AvatarBadge extends StatelessWidget {
   }
 }
 
-class _StackAvatar extends StatelessWidget {
-  const _StackAvatar({
-    required this.letter,
-    required this.background,
-    required this.textColor,
-  });
-
-  final String letter;
-  final Gradient background;
-  final Color textColor;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: 28,
-      height: 28,
-      decoration: BoxDecoration(
-        gradient: background,
-        shape: BoxShape.circle,
-        border: Border.all(color: _MainVisuals.featuredBorder, width: 2),
-      ),
-      child: Center(
-        child: Text(
-          letter,
-          style: TextStyle(
-            color: textColor,
-            fontWeight: FontWeight.w800,
-            fontSize: 11,
-          ),
-        ),
-      ),
-    );
-  }
-}
-
 class _MainVisuals {
   static const Color pageBackground = Color(0xFFF8FAFC);
   static const Color text = Color(0xFF0F172A);
@@ -836,7 +1221,6 @@ class _MainVisuals {
   static const Color softMint = Color(0xFFF0FAF4);
   static const Color softBorder = Color(0xFFD1FAE5);
   static const Color cardBorder = Color(0xFFE2E8F0);
-  static const Color featuredBorder = Color(0xFF1E293B);
   static const Color featuredMuted = Color(0xFFCBD5E1);
   static const Color featuredGreen = Color(0xFF4ADE80);
   static const Color featuredButton = Color(0xFF4ADE80);

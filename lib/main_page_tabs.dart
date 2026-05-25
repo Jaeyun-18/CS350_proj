@@ -8,9 +8,11 @@ class _HomeTab extends StatefulWidget {
     required this.emailVerified,
     required this.photoUrl,
     required this.openGroups,
+    required this.notificationCount,
     required this.onCreateGroup,
     required this.onEditPreferredLocation,
     required this.onFilterPressed,
+    required this.onNotificationsPressed,
     required this.activeFilterCount,
     required this.onOpenGroup,
   });
@@ -21,9 +23,11 @@ class _HomeTab extends StatefulWidget {
   final bool emailVerified;
   final String? photoUrl;
   final List<_GroupEntry> openGroups;
+  final int notificationCount;
   final VoidCallback onCreateGroup;
   final Future<void> Function(String? currentValue) onEditPreferredLocation;
   final VoidCallback onFilterPressed;
+  final VoidCallback onNotificationsPressed;
   final int activeFilterCount;
   final ValueChanged<_GroupEntry> onOpenGroup;
 
@@ -45,14 +49,17 @@ class _HomeTabState extends State<_HomeTab> {
 
   @override
   Widget build(BuildContext context) {
-    final initial =
-        widget.displayName.isNotEmpty ? widget.displayName[0].toUpperCase() : 'W';
+    final initial = widget.displayName.isNotEmpty
+        ? widget.displayName[0].toUpperCase()
+        : 'W';
     final selectedMatches = _selectedGroupId == null
         ? <_GroupEntry>[]
         : widget.openGroups
               .where((group) => group.id == _selectedGroupId)
               .toList();
-    final selectedGroup = selectedMatches.isEmpty ? null : selectedMatches.first;
+    final selectedGroup = selectedMatches.isEmpty
+        ? null
+        : selectedMatches.first;
     final featuredGroup = selectedGroup;
 
     return SafeArea(
@@ -93,7 +100,10 @@ class _HomeTabState extends State<_HomeTab> {
                 ),
               ),
               const SizedBox(width: 12),
-              _NotificationButton(count: 3),
+              _NotificationButton(
+                count: widget.notificationCount,
+                onTap: widget.onNotificationsPressed,
+              ),
               const SizedBox(width: 10),
               _AvatarBadge(letter: initial, photoUrl: widget.photoUrl),
             ],
@@ -127,7 +137,8 @@ class _HomeTabState extends State<_HomeTab> {
                         const SizedBox(width: 10),
                         Expanded(
                           child: Text(
-                            widget.preferredLocation ?? 'Set preferred location',
+                            widget.preferredLocation ??
+                                'Set preferred location',
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                             style: Theme.of(context).textTheme.bodyMedium
@@ -382,9 +393,12 @@ class _MyPageTab extends StatelessWidget {
     required this.preferredLocation,
     required this.emailVerified,
     required this.photoUrl,
+    required this.ratingAverage,
+    required this.ratingCount,
     required this.onEditPreferredLocation,
     required this.onEditProfile,
     required this.onLogout,
+    required this.onDeleteAccount,
   });
 
   final String displayName;
@@ -392,9 +406,12 @@ class _MyPageTab extends StatelessWidget {
   final String? preferredLocation;
   final bool emailVerified;
   final String? photoUrl;
+  final double ratingAverage;
+  final int ratingCount;
   final Future<void> Function(String? currentValue) onEditPreferredLocation;
   final VoidCallback onEditProfile;
   final VoidCallback onLogout;
+  final VoidCallback onDeleteAccount;
 
   @override
   Widget build(BuildContext context) {
@@ -467,6 +484,8 @@ class _MyPageTab extends StatelessWidget {
               ],
             ),
           ),
+          const SizedBox(height: 16),
+          _RatingSummaryCard(average: ratingAverage, count: ratingCount),
           const SizedBox(height: 16),
           _InfoPanel(
             title: 'ACCOUNT',
@@ -566,6 +585,22 @@ class _MyPageTab extends StatelessWidget {
             style: OutlinedButton.styleFrom(
               minimumSize: const Size.fromHeight(56),
               foregroundColor: const Color(0xFFDC2626),
+              side: const BorderSide(color: Color(0xFFFECACA)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(18),
+              ),
+              backgroundColor: const Color(0xFFFFF1F2),
+              textStyle: const TextStyle(fontWeight: FontWeight.w800),
+            ),
+          ),
+          const SizedBox(height: 12),
+          OutlinedButton.icon(
+            onPressed: onDeleteAccount,
+            icon: const Icon(Icons.delete_forever_rounded),
+            label: const Text('Delete account'),
+            style: OutlinedButton.styleFrom(
+              minimumSize: const Size.fromHeight(56),
+              foregroundColor: const Color(0xFFB91C1C),
               side: const BorderSide(color: Color(0xFFFECACA)),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(18),
@@ -679,83 +714,89 @@ class _FeaturedGroupCard extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(width: 12),
-                  Container(
-                    width: 48,
-                    height: 48,
-                    decoration: BoxDecoration(
-                      color: _MainVisuals.featuredBadge,
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                    child: const Center(
-                      child: Text('🛒', style: TextStyle(fontSize: 22)),
-                    ),
+                  _GroupOwnerAvatar(
+                    ownerId: group.ownerId,
+                    fallbackLetter: group.title.isNotEmpty
+                        ? group.title[0].toUpperCase()
+                        : 'G',
+                    size: 48,
                   ),
                 ],
               ),
               const SizedBox(height: 16),
-              Row(
-                children: [
-                  Stack(
-                    clipBehavior: Clip.none,
-                    children: [
-                      _StackAvatar(
-                        letter: 'S',
-                        background: const LinearGradient(
-                          colors: [_MainVisuals.green, Color(0xFF4ADE80)],
-                        ),
-                        textColor: Colors.white,
-                      ),
-                      const Positioned(
-                        left: 18,
-                        child: _StackAvatar(
-                          letter: 'M',
-                          background: LinearGradient(
-                            colors: [Color(0xFFF97316), Color(0xFFFB923C)],
-                          ),
-                          textColor: Colors.white,
-                        ),
-                      ),
-                      const Positioned(
-                        left: 36,
-                        child: _StackAvatar(
-                          letter: 'A',
-                          background: LinearGradient(
-                            colors: [Color(0xFF818CF8), Color(0xFFA78BFA)],
-                          ),
-                          textColor: Colors.white,
-                        ),
-                      ),
+              LayoutBuilder(
+                builder: (context, constraints) {
+                  final compact = constraints.maxWidth < 360;
+                  final actions = [
+                    if (onChat != null) ...[
+                      _CardChatButton(onPressed: onChat!),
+                      const SizedBox(width: 8),
                     ],
-                  ),
-                  const SizedBox(width: 84),
-                  Text(
-                    '${group.nowNum} / ${group.maxNum} members',
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: _MainVisuals.featuredMuted,
-                    ),
-                  ),
-                  const Spacer(),
-                  if (onChat != null) ...[
-                    _CardChatButton(onPressed: onChat!),
-                    const SizedBox(width: 8),
-                  ],
-                  TextButton.icon(
-                    onPressed: onAction,
-                    icon: Icon(actionIcon, size: 16),
-                    label: Text(actionLabel),
-                    style: TextButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 10,
-                      ),
-                      backgroundColor: _MainVisuals.featuredButton,
-                      foregroundColor: Colors.white,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
+                    TextButton.icon(
+                      onPressed: onAction,
+                      icon: Icon(actionIcon, size: 16),
+                      label: Text(actionLabel),
+                      style: TextButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 10,
+                        ),
+                        backgroundColor: _MainVisuals.featuredButton,
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
                       ),
                     ),
-                  ),
-                ],
+                  ];
+
+                  if (compact) {
+                    return Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      crossAxisAlignment: WrapCrossAlignment.center,
+                      children: [
+                        _GroupOwnerAvatar(
+                          ownerId: group.ownerId,
+                          fallbackLetter: group.title.isNotEmpty
+                              ? group.title[0].toUpperCase()
+                              : 'G',
+                          size: 46,
+                        ),
+                        Text(
+                          '${group.nowNum} / ${group.maxNum} members',
+                          style: Theme.of(context).textTheme.bodySmall
+                              ?.copyWith(color: _MainVisuals.featuredMuted),
+                        ),
+                        ...actions,
+                      ],
+                    );
+                  }
+
+                  return Row(
+                    children: [
+                      _GroupOwnerAvatar(
+                        ownerId: group.ownerId,
+                        fallbackLetter: group.title.isNotEmpty
+                            ? group.title[0].toUpperCase()
+                            : 'G',
+                        size: 52,
+                      ),
+                      const SizedBox(width: 12),
+                      Flexible(
+                        child: Text(
+                          '${group.nowNum} / ${group.maxNum} members',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: Theme.of(context).textTheme.bodySmall
+                              ?.copyWith(color: _MainVisuals.featuredMuted),
+                        ),
+                      ),
+                      const Spacer(),
+                      ...actions,
+                    ],
+                  );
+                },
               ),
               const SizedBox(height: 14),
               if (group.items.isEmpty)
@@ -1074,6 +1115,108 @@ class _StatsChip extends StatelessWidget {
   }
 }
 
+class _RatingSummaryCard extends StatelessWidget {
+  const _RatingSummaryCard({required this.average, required this.count});
+
+  final double average;
+  final int count;
+
+  @override
+  Widget build(BuildContext context) {
+    final displayAverage = average.toStringAsFixed(1);
+    return Stack(
+      clipBehavior: Clip.none,
+      children: [
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(18),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(22),
+            border: Border.all(color: _MainVisuals.cardBorder),
+            boxShadow: const [
+              BoxShadow(
+                color: Color(0x110F172A),
+                blurRadius: 12,
+                offset: Offset(0, 8),
+              ),
+            ],
+          ),
+          child: Row(
+            children: [
+              Container(
+                width: 54,
+                height: 54,
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFFF7ED),
+                  borderRadius: BorderRadius.circular(18),
+                ),
+                child: const Icon(
+                  Icons.star_rounded,
+                  color: Color(0xFFF59E0B),
+                  size: 28,
+                ),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Rating',
+                      style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                        color: _MainVisuals.mutedText,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      displayAverage,
+                      style: Theme.of(context).textTheme.headlineSmall
+                          ?.copyWith(
+                            color: _MainVisuals.text,
+                            fontWeight: FontWeight.w900,
+                          ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      count == 0
+                          ? 'No ratings yet'
+                          : 'Based on community feedback',
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: _MainVisuals.subtleText,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+        Positioned(
+          top: 10,
+          right: 10,
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            decoration: BoxDecoration(
+              color: const Color(0xFFFFF7ED),
+              borderRadius: BorderRadius.circular(999),
+              border: Border.all(color: const Color(0xFFFCD34D)),
+            ),
+            child: Text(
+              '총 평가 $count',
+              style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                color: const Color(0xFFD97706),
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
 class _ProfileAvatar extends StatelessWidget {
   const _ProfileAvatar({required this.initial, required this.photoUrl});
 
@@ -1103,6 +1246,89 @@ class _ProfileAvatar extends StatelessWidget {
                   color: Colors.white,
                   fontWeight: FontWeight.w900,
                   fontSize: 26,
+                ),
+              ),
+            ),
+    );
+  }
+}
+
+class _GroupOwnerAvatar extends StatelessWidget {
+  const _GroupOwnerAvatar({
+    required this.ownerId,
+    required this.fallbackLetter,
+    required this.size,
+  });
+
+  final String ownerId;
+  final String fallbackLetter;
+  final double size;
+
+  @override
+  Widget build(BuildContext context) {
+    if (ownerId.isEmpty) {
+      return _AvatarFrame(size: size, letter: fallbackLetter, photoUrl: null);
+    }
+
+    return StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
+      stream: AuthService.instance.watchProfile(ownerId),
+      builder: (context, snapshot) {
+        final data = snapshot.data?.data();
+        final displayName = data?['displayName']?.toString().trim();
+        final legacyNickname = data?['nickname']?.toString().trim();
+        final photoUrlValue = data?['photoURL']?.toString().trim();
+        final photoUrl = (photoUrlValue?.isNotEmpty ?? false)
+            ? photoUrlValue
+            : null;
+        final letter = (displayName?.isNotEmpty ?? false)
+            ? displayName![0].toUpperCase()
+            : (legacyNickname?.isNotEmpty ?? false)
+            ? legacyNickname![0].toUpperCase()
+            : fallbackLetter;
+
+        return _AvatarFrame(size: size, letter: letter, photoUrl: photoUrl);
+      },
+    );
+  }
+}
+
+class _AvatarFrame extends StatelessWidget {
+  const _AvatarFrame({
+    required this.size,
+    required this.letter,
+    required this.photoUrl,
+  });
+
+  final double size;
+  final String letter;
+  final String? photoUrl;
+
+  @override
+  Widget build(BuildContext context) {
+    final hasPhoto = photoUrl != null && photoUrl!.isNotEmpty;
+    return Container(
+      width: size,
+      height: size,
+      decoration: BoxDecoration(
+        color: hasPhoto ? Colors.white.withValues(alpha: 0.14) : null,
+        gradient: hasPhoto ? null : _MainVisuals.primaryGradient,
+        borderRadius: BorderRadius.circular(size * 0.31),
+        image: hasPhoto
+            ? DecorationImage(image: NetworkImage(photoUrl!), fit: BoxFit.cover)
+            : null,
+        border: Border.all(
+          color: Colors.white.withValues(alpha: hasPhoto ? 0.16 : 0.0),
+        ),
+      ),
+      child: hasPhoto
+          ? null
+          : Center(
+              child: Text(
+                letter,
+                style: TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w900,
+                  fontSize: size * 0.38,
                 ),
               ),
             ),

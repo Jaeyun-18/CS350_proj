@@ -34,6 +34,23 @@ service cloud.firestore {
           && request.resource.data.text.size() > 0;
         allow update, delete: if false;
       }
+
+      // Ratings: stored per rater/target pair. Rating values are enforced in
+      // the app and further constrained here to signed-in group participants.
+      match /ratings/{ratingId} {
+        allow read: if isSignedIn();
+        allow create, update: if isSignedIn()
+          && isGroupMember(groupId)
+          && request.resource.data.fromUid == request.auth.uid
+          && request.resource.data.groupId == groupId
+          && request.resource.data.value is int
+          && request.resource.data.value >= 1
+          && request.resource.data.value <= 5
+          && request.resource.data.toUid in
+            get(/databases/$(database)/documents/group/$(groupId))
+              .data.member_ids;
+        allow delete: if false;
+      }
     }
   }
 }
