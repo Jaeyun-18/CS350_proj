@@ -1,5 +1,3 @@
-import 'dart:math';
-
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
 
@@ -98,12 +96,14 @@ List<Map<String, dynamic>> itemsToMaps(List<GroupItem> items) =>
 Set<String> categoriesOf(List<GroupItem> items) =>
     items.map((item) => item.category).toSet();
 
-final Random _itemIdRandom = Random();
+int _itemIdSequence = 0;
 
 /// 품목 배열 안에서 항목을 안정적으로 식별하기 위한 새 ID를 만든다.
-String newGroupItemId() =>
-    '${DateTime.now().microsecondsSinceEpoch.toRadixString(36)}'
-    '${_itemIdRandom.nextInt(1 << 32).toRadixString(36)}';
+String newGroupItemId() {
+  final timestamp = DateTime.now().microsecondsSinceEpoch.toRadixString(36);
+  final sequence = (_itemIdSequence++ & 0xFFFF).toRadixString(36);
+  return '${timestamp}_$sequence';
+}
 
 /// 그룹 문서의 한 품목 담당을 토글한다.
 ///
