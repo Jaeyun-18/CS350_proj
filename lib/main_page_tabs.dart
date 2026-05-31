@@ -783,7 +783,7 @@ class _FeaturedGroupCard extends StatelessWidget {
                         size: 52,
                       ),
                       const SizedBox(width: 12),
-                      Flexible(
+                      Expanded(
                         child: Text(
                           '${group.nowNum} / ${group.maxNum} members',
                           maxLines: 1,
@@ -792,8 +792,11 @@ class _FeaturedGroupCard extends StatelessWidget {
                               ?.copyWith(color: _MainVisuals.featuredMuted),
                         ),
                       ),
-                      const Spacer(),
-                      ...actions,
+                      const SizedBox(width: 12),
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: actions,
+                      ),
                     ],
                   );
                 },
